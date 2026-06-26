@@ -139,6 +139,30 @@ button:hover { background: var(--hover); }
   flex-shrink: 0;
 }
 
+.code-view {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  background: var(--textarea-bg);
+}
+
+.line-numbers {
+  flex-shrink: 0;
+  padding: 8px 6px 8px 8px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg);
+  opacity: 0.4;
+  text-align: right;
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  min-width: 32px;
+}
+
 textarea {
   flex: 1;
   border: none;
@@ -152,6 +176,12 @@ textarea {
   white-space: pre;
   overflow-wrap: normal;
   overflow-x: auto;
+  line-height: 1.45;
+}
+
+.pane-actions {
+  display: flex;
+  gap: 6px;
 }
 
 #toast {
