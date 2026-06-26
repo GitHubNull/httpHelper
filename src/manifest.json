@@ -4,5 +4,5 @@
   "version": "0.1.0",
   "description": "Copy raw HTTP request/response messages from Chrome DevTools Network panel",
   "permissions": [],
-  "devtools_page": "src/devtools.html"
+  "devtools_page": "devtools.html"
 }
