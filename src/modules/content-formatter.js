@@ -81,30 +81,32 @@ const ContentFormatter = {
 
   buildPrettyRequest(req) {
     const raw = this.buildRawRequest(req);
-    if (!req.postData || !req.postData.text) return raw;
     const ct = this.detectContentType(req.headers);
+    if (!req.postData || !req.postData.text) {
+      return { content: raw, language: 'http' };
+    }
     if (ct === 'json' || ct === 'xml') {
       const formattedBody = this.formatBody(req.postData.text, ct);
       const parts = raw.split('\r\n\r\n');
       if (parts.length >= 2) {
-        return parts[0] + '\r\n\r\n' + formattedBody;
+        return { content: parts[0] + '\r\n\r\n' + formattedBody, language: ct };
       }
     }
-    return raw;
+    return { content: raw, language: 'http' };
   },
 
   buildPrettyResponse(res, body) {
     const raw = this.buildRawResponse(res, body);
-    if (!body) return raw;
-    const ct = this.detectContentType(res.headers);
+    if (!body) return { content: raw, language: 'http' };
+    const ct = this.detectContentType(res ? res.headers : []);
     if (ct === 'json' || ct === 'xml') {
       const formattedBody = this.formatBody(body, ct);
       const parts = raw.split('\r\n\r\n');
       if (parts.length >= 2) {
-        return parts[0] + '\r\n\r\n' + formattedBody;
+        return { content: parts[0] + '\r\n\r\n' + formattedBody, language: ct };
       }
     }
-    return raw;
+    return { content: raw, language: 'http' };
   },
 
   buildHexRequest(req) {

@@ -81,16 +81,38 @@ const SessionStorage = {
     field.schemeId = schemeId;
     field.createdAt = field.createdAt || Date.now();
     field.updatedAt = Date.now();
+    field.enabled = field.enabled !== false;
     field.persist = field.persist !== false;
     fields.push(field);
     await this._setFields(schemeId, fields);
     return { success: true, field };
   },
 
+  async updateField(schemeId, field) {
+    const fields = await this.loadFields(schemeId);
+    const idx = fields.findIndex(f => f.id === field.id);
+    if (idx === -1) return { success: false, message: '字段不存在' };
+    field.updatedAt = Date.now();
+    field.schemeId = schemeId;
+    fields[idx] = { ...fields[idx], ...field };
+    await this._setFields(schemeId, fields);
+    return { success: true };
+  },
+
   async deleteField(schemeId, fieldId) {
     const fields = await this.loadFields(schemeId);
     const filtered = fields.filter(f => f.id !== fieldId);
     await this._setFields(schemeId, filtered);
+    return { success: true };
+  },
+
+  async toggleFieldEnabled(schemeId, fieldId, enabled) {
+    const fields = await this.loadFields(schemeId);
+    const field = fields.find(f => f.id === fieldId);
+    if (!field) return { success: false };
+    field.enabled = enabled;
+    field.updatedAt = Date.now();
+    await this._setFields(schemeId, fields);
     return { success: true };
   },
 

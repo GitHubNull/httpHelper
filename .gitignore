@@ -35,3 +35,6 @@ target/
 build/
 dist/
 node_modules/
+
+# Temporary files
+tmp/

@@ -5,17 +5,20 @@ import LayoutManager from './modules/layout-manager.js';
 import SearchHighlighter from './modules/search-highlighter.js';
 import SessionExtractor from './modules/session-extractor.js';
 import SessionStorage from './modules/session-storage.js';
+import TableManager from './modules/table-manager.js';
 import ClipboardUtils from './utils/clipboard-utils.js';
 import DomUtils from './utils/dom-utils.js';
 
-(function() {
+(function () {
   'use strict';
 
+  // === State ===
   let selectedIndex = -1;
   let currentRequest = null;
   let currentResponseBody = '';
   let schemes = [];
   let activeScheme = null;
+  let editingFieldId = null;
   let editingSchemeId = null;
 
   // Per-pane search state
@@ -24,187 +27,91 @@ import DomUtils from './utils/dom-utils.js';
     res: { matches: [], currentIndex: -1 }
   };
 
-  // DOM refs (jQuery)
+  // === DOM Refs ===
   const $reqText = $('#raw-request');
-  const $prettyReqText = $('#pretty-request');
   const $resText = $('#raw-response');
-  const $prettyResText = $('#pretty-response');
   const $hexReq = $('#hex-request');
   const $hexRes = $('#hex-response');
 
-  // Init
+  // === Init ===
   NetworkHandler.initNetworkListener((request) => {
-    UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+    UiRenderer.renderRequestTable(NetworkHandler.getRequests(), selectedIndex, selectRequest);
     checkSessionExtraction(request);
   });
 
   loadSchemes();
 
   // Layout
-  LayoutManager.initLayoutButtons($('.layout-bar'), (layout) => {
-    // LayoutManager.switchLayout already handles class and pane visibility
-  });
+  LayoutManager.initLayoutButtons($('.layout-bar'), () => {});
 
-  // Resizer drag
-  initResizer();
+  // Resizers
+  initTableResizer();
+  initPaneResizer();
 
-  // Pane-local searches
+  // Pane searches
   initPaneSearch('req');
   initPaneSearch('res');
 
-  // Tab switching
-  $('.tab-btn').on('click', function() {
+  // Tab switching (Raw/Pretty/Hex)
+  $(document).on('click', '.tab-btn', function () {
     const pane = $(this).attr('data-pane');
     const tab = $(this).attr('data-tab');
     UiRenderer.switchTab(pane, tab);
-    if (currentRequest) {
-      refreshSearchForActiveTab();
-    }
+    if (currentRequest) refreshSearchForActiveTab();
   });
 
   // Tab layout pane switching
-  $('#switch-to-res').on('click', () => {
-    LayoutManager.showResponsePane();
-  });
-  $('#switch-to-req').on('click', () => {
-    LayoutManager.showRequestPane();
-  });
+  $('#switch-to-res').on('click', () => LayoutManager.showResponsePane());
+  $('#switch-to-req').on('click', () => LayoutManager.showRequestPane());
 
   // Copy / Download
   $('#copy-req').on('click', () => {
-    const pane = 'request';
-    const tab = UiRenderer.getActiveTab(pane);
-    const text = getPaneText(pane, tab);
+    const text = getPaneText('request', UiRenderer.getActiveTab('request'));
     ClipboardUtils.copyText(text, 'Request copied!');
   });
-
   $('#copy-res').on('click', () => {
-    const pane = 'response';
-    const tab = UiRenderer.getActiveTab(pane);
-    const text = getPaneText(pane, tab);
+    const text = getPaneText('response', UiRenderer.getActiveTab('response'));
     ClipboardUtils.copyText(text, 'Response copied!');
   });
-
   $('#download-req').on('click', () => {
-    const request = NetworkHandler.getRequest(selectedIndex);
-    const pane = 'request';
-    const tab = UiRenderer.getActiveTab(pane);
-    const text = getPaneText(pane, tab);
-    const filename = request ? 'request_' + (request.request.method || 'HTTP') + '.txt' : 'request.txt';
-    ClipboardUtils.downloadText(text, filename);
+    const req = NetworkHandler.getRequest(selectedIndex);
+    const text = getPaneText('request', UiRenderer.getActiveTab('request'));
+    const name = req ? 'request_' + (req.request.method || 'HTTP') + '.txt' : 'request.txt';
+    ClipboardUtils.downloadText(text, name);
   });
-
   $('#download-res').on('click', () => {
-    const request = NetworkHandler.getRequest(selectedIndex);
-    const pane = 'response';
-    const tab = UiRenderer.getActiveTab(pane);
-    const text = getPaneText(pane, tab);
-    const filename = request ? 'response_' + (request.response ? request.response.status : 'HTTP') + '.txt' : 'response.txt';
-    ClipboardUtils.downloadText(text, filename);
+    const req = NetworkHandler.getRequest(selectedIndex);
+    const text = getPaneText('response', UiRenderer.getActiveTab('response'));
+    const name = req ? 'response_' + (req.response ? req.response.status : 'HTTP') + '.txt' : 'response.txt';
+    ClipboardUtils.downloadText(text, name);
   });
 
+  // Clear
   $('#clear').on('click', () => {
     NetworkHandler.clearRequests();
     selectedIndex = -1;
     currentRequest = null;
     currentResponseBody = '';
     $reqText.val('');
-    $prettyReqText.val('');
     $resText.val('');
-    $prettyResText.val('');
     $hexReq.text('');
     $hexRes.text('');
-    UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+    $('#pretty-request').text('');
+    $('#pretty-response').text('');
+    UiRenderer.renderRequestTable(NetworkHandler.getRequests(), selectedIndex, selectRequest);
   });
 
-  // Session UI
-  $('#new-scheme-btn').on('click', () => {
-    editingSchemeId = null;
-    $('#scheme-name').val('');
-    $('#scheme-domains').val('');
-    $('#scheme-regex').val('');
-    $('#scheme-desc').val('');
-    $('#scheme-editor').show();
-    renderFieldList([]);
-  });
-
-  $('#cancel-scheme-btn').on('click', () => {
-    $('#scheme-editor').hide();
-    editingSchemeId = null;
-  });
-
-  $('#save-scheme-btn').on('click', async () => {
-    const name = $('#scheme-name').val().trim();
-    if (!name) {
-      ClipboardUtils.showToast('Scheme name is required');
-      return;
-    }
-    const domains = $('#scheme-domains').val().split(',').map(s => s.trim()).filter(Boolean);
-    const scheme = {
-      id: editingSchemeId || 'scheme_' + Date.now(),
-      name: name,
-      targetDomains: domains,
-      domainRegex: $('#scheme-regex').val().trim(),
-      description: $('#scheme-desc').val().trim(),
-      isActive: false,
-      persist: true
-    };
-    if (editingSchemeId) {
-      await SessionStorage.updateScheme(scheme);
-    } else {
-      const result = await SessionStorage.saveScheme(scheme);
-      if (!result.success) {
-        ClipboardUtils.showToast(result.message);
-        return;
-      }
-    }
-    await loadSchemes();
-    $('#scheme-editor').hide();
-    editingSchemeId = null;
-  });
-
-  $('#add-field-btn').on('click', async () => {
-    if (!editingSchemeId) {
-      ClipboardUtils.showToast('Please save scheme first');
-      return;
-    }
-    const name = $('#field-name').val().trim();
-    const locationType = $('#field-location').val();
-    const locationName = $('#field-location-name').val().trim();
-    const mode = $('#field-mode').val();
-    const pattern = $('#field-pattern').val().trim();
-    if (!name || !pattern) {
-      ClipboardUtils.showToast('Field name and pattern are required');
-      return;
-    }
-    const field = {
-      name: name,
-      location: { type: locationType, name: locationName },
-      mode: mode,
-      pattern: pattern,
-      persist: true
-    };
-    const result = await SessionStorage.saveField(editingSchemeId, field);
-    if (!result.success) {
-      ClipboardUtils.showToast(result.message);
-      return;
-    }
-    $('#field-name').val('');
-    $('#field-pattern').val('');
-    const fields = await SessionStorage.loadFields(editingSchemeId);
-    renderFieldList(fields);
-    // Update activeScheme.fields if editing the active scheme
-    if (activeScheme && activeScheme.id === editingSchemeId) {
-      activeScheme.fields = fields;
-    }
-  });
-
+  // === Session Config Tab Events ===
+  // Add Field
+  $('#add-field-btn').on('click', () => showFieldEditor(null));
+  // Add Scheme
+  $('#add-scheme-btn').on('click', () => showSchemeEditor(null));
+  // Copy Session
   $('#copy-session-btn').on('click', async () => {
     if (!activeScheme || !currentRequest) {
       ClipboardUtils.showToast('No active scheme or request');
       return;
     }
-    // Ensure fields are loaded (B1 fix)
     if (!activeScheme.fields) {
       activeScheme.fields = await SessionStorage.loadFields(activeScheme.id);
     }
@@ -217,21 +124,149 @@ import DomUtils from './utils/dom-utils.js';
     }
   });
 
-  // Core functions
+  // Save Field (modal)
+  $('#save-field-btn').on('click', async () => {
+    const schemeId = $('#edit-field-scheme').val();
+    const name = $('#edit-field-name').val().trim();
+    const pattern = $('#edit-field-pattern').val().trim();
+    if (!name || !pattern || !schemeId) {
+      ClipboardUtils.showToast('Name, scheme, and pattern are required');
+      return;
+    }
+    const field = {
+      id: editingFieldId || undefined,
+      name,
+      location: { type: $('#edit-field-location').val(), name: $('#edit-field-location-name').val().trim() },
+      mode: $('#edit-field-mode').val(),
+      pattern,
+      enabled: true
+    };
+    if (editingFieldId) {
+      field.id = editingFieldId;
+      await SessionStorage.updateField(schemeId, field);
+    } else {
+      const result = await SessionStorage.saveField(schemeId, field);
+      if (!result.success) { ClipboardUtils.showToast(result.message); return; }
+    }
+    bootstrap.Modal.getInstance($('#fieldEditorModal')[0]).hide();
+    editingFieldId = null;
+    await loadSchemes();
+    renderFieldsTable();
+  });
+
+  // Save Scheme (modal)
+  $('#save-scheme-btn').on('click', async () => {
+    const name = $('#edit-scheme-name').val().trim();
+    if (!name) { ClipboardUtils.showToast('Scheme name is required'); return; }
+    const domains = $('#edit-scheme-domains').val().split(',').map(s => s.trim()).filter(Boolean);
+    const scheme = {
+      id: editingSchemeId || 'scheme_' + Date.now(),
+      name,
+      targetDomains: domains,
+      domainRegex: $('#edit-scheme-regex').val().trim(),
+      description: $('#edit-scheme-desc').val().trim(),
+      isActive: false
+    };
+    if (editingSchemeId) {
+      const existing = schemes.find(s => s.id === editingSchemeId);
+      if (existing) scheme.isActive = existing.isActive;
+      await SessionStorage.updateScheme(scheme);
+    } else {
+      const result = await SessionStorage.saveScheme(scheme);
+      if (!result.success) { ClipboardUtils.showToast(result.message); return; }
+    }
+    bootstrap.Modal.getInstance($('#schemeEditorModal')[0]).hide();
+    editingSchemeId = null;
+    await loadSchemes();
+    renderSchemesTable();
+  });
+
+  // Field table event delegation: toggle enabled
+  $('#fields-table').on('change', '.toggle-enabled', async function () {
+    const fieldId = $(this).attr('data-id');
+    const schemeId = $(this).attr('data-scheme');
+    const enabled = $(this).prop('checked');
+    const fields = await SessionStorage.loadFields(schemeId);
+    const field = fields.find(f => f.id === fieldId);
+    if (field) {
+      field.enabled = enabled;
+      await SessionStorage.updateField(schemeId, field);
+      if (activeScheme && activeScheme.id === schemeId) {
+        activeScheme.fields = await SessionStorage.loadFields(schemeId);
+      }
+    }
+  });
+
+  // Field table: edit/delete
+  $('#fields-table').on('click', '.edit-field-btn', async function () {
+    const fieldId = $(this).attr('data-id');
+    const schemeId = $(this).attr('data-scheme');
+    const fields = await SessionStorage.loadFields(schemeId);
+    const field = fields.find(f => f.id === fieldId);
+    if (field) showFieldEditor(field, schemeId);
+  });
+  $('#fields-table').on('click', '.delete-field-btn', async function () {
+    const fieldId = $(this).attr('data-id');
+    const schemeId = $(this).attr('data-scheme');
+    await SessionStorage.deleteField(schemeId, fieldId);
+    await loadSchemes();
+    renderFieldsTable();
+  });
+
+  // Scheme table event delegation: toggle enabled
+  $('#schemes-table').on('change', '.toggle-enabled', async function () {
+    const schemeId = $(this).attr('data-id');
+    const enabled = $(this).prop('checked');
+    if (enabled) {
+      await SessionStorage.setActiveScheme(schemeId);
+    } else {
+      await SessionStorage.setActiveScheme(null);
+    }
+    await loadSchemes();
+    renderSchemesTable();
+  });
+
+  // Scheme table: edit/delete
+  $('#schemes-table').on('click', '.edit-scheme-btn', function () {
+    const id = $(this).attr('data-id');
+    const scheme = schemes.find(s => s.id === id);
+    if (scheme) showSchemeEditor(scheme);
+  });
+  $('#schemes-table').on('click', '.delete-scheme-btn', async function () {
+    const id = $(this).attr('data-id');
+    await SessionStorage.deleteScheme(id);
+    await loadSchemes();
+    renderSchemesTable();
+    renderFieldsTable();
+  });
+
+  // Init tables with column features
+  TableManager.initColumnResize($('#request-table'));
+  TableManager.initColumnReorder($('#request-table'));
+  TableManager.initColumnResize($('#fields-table'));
+  TableManager.initColumnReorder($('#fields-table'));
+  TableManager.initColumnResize($('#schemes-table'));
+  TableManager.initColumnReorder($('#schemes-table'));
+
+  // Refresh session tables when tab shown
+  $('#main-tabs button[data-bs-target="#tab-session-config"]').on('shown.bs.tab', () => {
+    renderFieldsTable();
+    renderSchemesTable();
+  });
+
+  // === Core Functions ===
   function selectRequest(index) {
     selectedIndex = index;
     const request = NetworkHandler.getRequest(index);
     currentRequest = request;
 
-    // B8 fix: clear old search highlights before loading new content
     clearPaneHighlights('req');
     clearPaneHighlights('res');
-
-    UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+    UiRenderer.renderRequestTable(NetworkHandler.getRequests(), selectedIndex, selectRequest);
 
     if (!request) return;
 
-    // Build request contents
+    // Build request
     const rawReq = ContentFormatter.buildRawRequest(request.request);
     const prettyReq = ContentFormatter.buildPrettyRequest(request.request);
     const hexReqText = ContentFormatter.buildHexRequest(request.request);
@@ -241,11 +276,11 @@ import DomUtils from './utils/dom-utils.js';
     UiRenderer.updatePaneContent('request', 'hex', hexReqText);
 
     // Response loading
-    UiRenderer.updatePaneContent('response', 'raw', 'Loading response body...');
-    UiRenderer.updatePaneContent('response', 'pretty', 'Loading response body...');
-    UiRenderer.updatePaneContent('response', 'hex', 'Loading response body...');
+    UiRenderer.updatePaneContent('response', 'raw', 'Loading...');
+    UiRenderer.updatePaneContent('response', 'pretty', { content: 'Loading...', language: 'plaintext' });
+    UiRenderer.updatePaneContent('response', 'hex', 'Loading...');
 
-    request.getContent((body, encoding) => {
+    request.getContent((body) => {
       currentResponseBody = body || '';
       const rawRes = ContentFormatter.buildRawResponse(request.response, body);
       const prettyRes = ContentFormatter.buildPrettyResponse(request.response, body);
@@ -256,23 +291,15 @@ import DomUtils from './utils/dom-utils.js';
       UiRenderer.updatePaneContent('response', 'hex', hexResText);
 
       // Smart tab switching
-      const resContentType = ContentFormatter.detectContentType(request.response ? request.response.headers : []);
-      if (resContentType === 'json' || resContentType === 'xml') {
-        UiRenderer.setActiveTab('response', 'pretty');
-      } else if (resContentType === 'binary') {
-        UiRenderer.setActiveTab('response', 'hex');
-      } else {
-        UiRenderer.setActiveTab('response', 'raw');
-      }
+      const resType = ContentFormatter.detectContentType(request.response ? request.response.headers : []);
+      if (resType === 'json' || resType === 'xml') UiRenderer.setActiveTab('response', 'pretty');
+      else if (resType === 'binary') UiRenderer.setActiveTab('response', 'hex');
+      else UiRenderer.setActiveTab('response', 'raw');
 
-      const reqContentType = ContentFormatter.detectContentType(request.request.headers);
-      if (reqContentType === 'json' || reqContentType === 'xml') {
-        UiRenderer.setActiveTab('request', 'pretty');
-      } else if (reqContentType === 'binary') {
-        UiRenderer.setActiveTab('request', 'hex');
-      } else {
-        UiRenderer.setActiveTab('request', 'raw');
-      }
+      const reqType = ContentFormatter.detectContentType(request.request.headers);
+      if (reqType === 'json' || reqType === 'xml') UiRenderer.setActiveTab('request', 'pretty');
+      else if (reqType === 'binary') UiRenderer.setActiveTab('request', 'hex');
+      else UiRenderer.setActiveTab('request', 'raw');
 
       refreshSearchForActiveTab();
     });
@@ -281,16 +308,112 @@ import DomUtils from './utils/dom-utils.js';
   function getPaneText(pane, tab) {
     if (pane === 'request') {
       if (tab === 'raw') return $reqText.val();
-      if (tab === 'pretty') return $prettyReqText.val();
+      if (tab === 'pretty') return $('#pretty-request').text();
       if (tab === 'hex') return $hexReq.text();
     } else {
       if (tab === 'raw') return $resText.val();
-      if (tab === 'pretty') return $prettyResText.val();
+      if (tab === 'pretty') return $('#pretty-response').text();
       if (tab === 'hex') return $hexRes.text();
     }
     return '';
   }
 
+  // === Session CRUD ===
+  async function loadSchemes() {
+    schemes = await SessionStorage.loadSchemes();
+    const activeId = await SessionStorage.getActiveScheme();
+    activeScheme = schemes.find(s => s.id === activeId) || null;
+    if (activeScheme) {
+      activeScheme.fields = await SessionStorage.loadFields(activeScheme.id);
+    }
+  }
+
+  function renderFieldsTable() {
+    const allFieldsData = [];
+    const promises = schemes.map(async (scheme) => {
+      const fields = await SessionStorage.loadFields(scheme.id);
+      fields.forEach(f => allFieldsData.push({ ...f, schemeName: scheme.name, schemeId: scheme.id }));
+    });
+    Promise.all(promises).then(() => {
+      const columns = [
+        { key: 'enabled', render: (row) => `<div class="form-check form-switch d-flex justify-content-center mb-0"><input class="form-check-input toggle-enabled" type="checkbox" data-id="${row.id}" data-scheme="${row.schemeId}" ${row.enabled !== false ? 'checked' : ''}></div>` },
+        { key: 'name', render: (row) => row.name },
+        { key: 'schemeId', render: (row) => row.schemeName || '' },
+        { key: 'locationType', render: (row) => row.location ? row.location.type : '' },
+        { key: 'locationName', render: (row) => row.location ? (row.location.name || '-') : '' },
+        { key: 'mode', render: (row) => `<span class="badge bg-secondary">${row.mode}</span>` },
+        { key: 'pattern', render: (row) => `<code class="small">${escapeHtml(row.pattern || '')}</code>` },
+        { key: 'actions', render: (row) => `<button class="btn btn-sm btn-outline-primary py-0 px-1 edit-field-btn" data-id="${row.id}" data-scheme="${row.schemeId}">Edit</button> <button class="btn btn-sm btn-outline-danger py-0 px-1 delete-field-btn" data-id="${row.id}" data-scheme="${row.schemeId}">Del</button>` }
+      ];
+      TableManager.renderTableBody($('#fields-table'), columns, allFieldsData, {});
+    });
+  }
+
+  function renderSchemesTable() {
+    const columns = [
+      { key: 'enabled', render: (row) => `<div class="form-check form-switch d-flex justify-content-center mb-0"><input class="form-check-input toggle-enabled" type="checkbox" data-id="${row.id}" ${row.isActive ? 'checked' : ''}></div>` },
+      { key: 'name', render: (row) => `<strong>${escapeHtml(row.name)}</strong>` },
+      { key: 'domains', render: (row) => escapeHtml((row.targetDomains || []).join(', ')) },
+      { key: 'regex', render: (row) => `<code class="small">${escapeHtml(row.domainRegex || '')}</code>` },
+      { key: 'description', render: (row) => escapeHtml(row.description || '') },
+      { key: 'fieldCount', render: (row) => row._fieldCount !== undefined ? row._fieldCount : '...' },
+      { key: 'actions', render: (row) => `<button class="btn btn-sm btn-outline-primary py-0 px-1 edit-scheme-btn" data-id="${row.id}">Edit</button> <button class="btn btn-sm btn-outline-danger py-0 px-1 delete-scheme-btn" data-id="${row.id}">Del</button>` }
+    ];
+    // Load field counts
+    const dataWithCounts = schemes.map(s => ({ ...s, _fieldCount: '...' }));
+    TableManager.renderTableBody($('#schemes-table'), columns, dataWithCounts, {});
+    // Async load field counts
+    schemes.forEach(async (scheme, idx) => {
+      const fields = await SessionStorage.loadFields(scheme.id);
+      const $rows = $('#schemes-table tbody tr');
+      if ($rows.eq(idx).length) {
+        const countColIdx = TableManager.getColumnOrder($('#schemes-table')).indexOf('fieldCount');
+        if (countColIdx >= 0) {
+          $rows.eq(idx).find('td').eq(countColIdx).text(fields.length);
+        }
+      }
+    });
+  }
+
+  function showFieldEditor(field, schemeId) {
+    editingFieldId = field ? field.id : null;
+    // Populate scheme dropdown
+    const $select = $('#edit-field-scheme').empty();
+    schemes.forEach(s => $select.append(`<option value="${s.id}">${escapeHtml(s.name)}</option>`));
+    if (field) {
+      $('#edit-field-name').val(field.name);
+      $('#edit-field-scheme').val(schemeId || field.schemeId || '');
+      $('#edit-field-location').val(field.location ? field.location.type : 'header');
+      $('#edit-field-location-name').val(field.location ? field.location.name : '');
+      $('#edit-field-mode').val(field.mode || 'substring');
+      $('#edit-field-pattern').val(field.pattern || '');
+    } else {
+      $('#edit-field-name').val('');
+      $('#edit-field-location').val('header');
+      $('#edit-field-location-name').val('');
+      $('#edit-field-mode').val('substring');
+      $('#edit-field-pattern').val('');
+    }
+    new bootstrap.Modal($('#fieldEditorModal')[0]).show();
+  }
+
+  function showSchemeEditor(scheme) {
+    editingSchemeId = scheme ? scheme.id : null;
+    if (scheme) {
+      $('#edit-scheme-name').val(scheme.name);
+      $('#edit-scheme-domains').val((scheme.targetDomains || []).join(', '));
+      $('#edit-scheme-regex').val(scheme.domainRegex || '');
+      $('#edit-scheme-desc').val(scheme.description || '');
+    } else {
+      $('#edit-scheme-name').val('');
+      $('#edit-scheme-domains').val('');
+      $('#edit-scheme-regex').val('');
+      $('#edit-scheme-desc').val('');
+    }
+    new bootstrap.Modal($('#schemeEditorModal')[0]).show();
+  }
+
+  // === Search ===
   function performPaneSearch(prefix, pattern, options) {
     const pane = prefix === 'req' ? 'request' : 'response';
     const tab = UiRenderer.getActiveTab(pane);
@@ -303,50 +426,43 @@ import DomUtils from './utils/dom-utils.js';
   }
 
   function updatePaneSearchCount(prefix) {
-    const $count = $('#' + prefix + '-search-count');
+    const $count = $(`#${prefix}-search-count`);
     if (!$count.length) return;
     const state = paneSearchState[prefix];
     if (state.matches.length > 0 && state.currentIndex >= 0) {
-      $count.text(`${state.currentIndex + 1}/${state.matches.length}`);
+      $count.text(`${state.currentIndex + 1}/${state.matches.length} highlights`);
     } else {
-      $count.text('0/0');
+      $count.text('0 highlights');
     }
   }
 
   function navigatePaneMatch(prefix, direction) {
     const state = paneSearchState[prefix];
     if (state.matches.length === 0) return;
-    if (direction === 'next') {
-      state.currentIndex = (state.currentIndex + 1) % state.matches.length;
-    } else {
-      state.currentIndex = (state.currentIndex - 1 + state.matches.length) % state.matches.length;
-    }
+    state.currentIndex = direction === 'next'
+      ? (state.currentIndex + 1) % state.matches.length
+      : (state.currentIndex - 1 + state.matches.length) % state.matches.length;
     updatePaneSearchCount(prefix);
     scrollToPaneMatch(prefix);
   }
 
   function scrollToPaneMatch(prefix) {
     const pane = prefix === 'req' ? 'request' : 'response';
-    const $pane = $('#' + pane + '-pane');
+    const $pane = $(`#${pane}-pane`);
     if (!$pane.length) return;
     const state = paneSearchState[prefix];
     const $marks = $pane.find('.highlight-overlay mark.search-highlight');
     const $mark = $marks.eq(state.currentIndex);
-    if ($mark.length) {
-      $mark[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
+    if ($mark.length) $mark[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 
   function refreshSearchForActiveTab() {
-    // Refresh both pane searches
     ['req', 'res'].forEach(prefix => {
-      const $input = $('#' + prefix + '-search-input');
+      const $input = $(`#${prefix}-search-input`);
       if ($input.length && $input.val()) {
-        const $regexBtn = $('#' + prefix + '-search-regex');
-        const $caseBtn = $('#' + prefix + '-search-case');
         const options = {
-          useRegex: $regexBtn.hasClass('active'),
-          caseSensitive: $caseBtn.hasClass('active')
+          useRegex: $(`#${prefix}-search-regex`).hasClass('active'),
+          caseSensitive: $(`#${prefix}-search-case`).hasClass('active')
         };
         performPaneSearch(prefix, $input.val(), options);
       }
@@ -354,77 +470,118 @@ import DomUtils from './utils/dom-utils.js';
   }
 
   function initPaneSearch(prefix) {
-    const $input = $('#' + prefix + '-search-input');
-    const $regexToggle = $('#' + prefix + '-search-regex');
-    const $caseToggle = $('#' + prefix + '-search-case');
-    const $prevBtn = $('#' + prefix + '-search-prev');
-    const $nextBtn = $('#' + prefix + '-search-next');
-    const $countEl = $('#' + prefix + '-search-count');
-
-    const isToggleActive = ($btn) => $btn.hasClass('active');
+    const $input = $(`#${prefix}-search-input`);
+    const $regexToggle = $(`#${prefix}-search-regex`);
+    const $caseToggle = $(`#${prefix}-search-case`);
+    const $prevBtn = $(`#${prefix}-search-prev`);
+    const $nextBtn = $(`#${prefix}-search-next`);
+    const $countEl = $(`#${prefix}-search-count`);
 
     const doSearch = () => {
-      const text = $input.length ? $input.val() : '';
-      const options = {
-        useRegex: isToggleActive($regexToggle),
-        caseSensitive: isToggleActive($caseToggle)
-      };
+      const text = $input.val() || '';
+      const options = { useRegex: $regexToggle.hasClass('active'), caseSensitive: $caseToggle.hasClass('active') };
       if (!text) {
         clearPaneHighlights(prefix);
-        paneSearchState[prefix].matches = [];
-        paneSearchState[prefix].currentIndex = -1;
-        if ($countEl.length) $countEl.text('0/0');
+        paneSearchState[prefix] = { matches: [], currentIndex: -1 };
+        $countEl.text('0 highlights');
         return;
       }
       performPaneSearch(prefix, text, options);
     };
 
-    if ($input.length) $input.on('input', DomUtils.debounce(doSearch, 300));
-    if ($regexToggle.length) {
-      $regexToggle.on('click', () => {
-        $regexToggle.toggleClass('active');
-        doSearch();
-      });
-    }
-    if ($caseToggle.length) {
-      $caseToggle.on('click', () => {
-        $caseToggle.toggleClass('active');
-        doSearch();
-      });
-    }
-    if ($prevBtn.length) $prevBtn.on('click', () => navigatePaneMatch(prefix, 'prev'));
-    if ($nextBtn.length) $nextBtn.on('click', () => navigatePaneMatch(prefix, 'next'));
+    $input.on('input', DomUtils.debounce(doSearch, 300));
+    $regexToggle.on('click', () => { $regexToggle.toggleClass('active'); doSearch(); });
+    $caseToggle.on('click', () => { $caseToggle.toggleClass('active'); doSearch(); });
+    $prevBtn.on('click', () => navigatePaneMatch(prefix, 'prev'));
+    $nextBtn.on('click', () => navigatePaneMatch(prefix, 'next'));
   }
 
   function clearPaneHighlights(prefix) {
     const pane = prefix === 'req' ? 'request' : 'response';
-    const $pane = $('#' + pane + '-pane');
+    const $pane = $(`#${pane}-pane`);
     if (!$pane.length) return;
     $pane.find('.highlight-overlay').empty();
-    $pane.find('.hex-display').each(function() {
+    $pane.find('.hex-display').each(function () {
       const $el = $(this);
-      if ($el.html() !== $el.text()) {
-        $el.text($el.text());
-      }
+      if ($el.html() !== $el.text()) $el.text($el.text());
     });
   }
 
-  function initResizer() {
+  function applyHighlights(pane, tab, matches) {
+    clearPaneHighlights(pane === 'request' ? 'req' : 'res');
+    if (!matches || matches.length === 0) return;
+    const $pane = $(`#${pane}-pane`);
+    if (!$pane.length) return;
+    const $content = $pane.find(`.tab-content[data-tab="${tab}"]`);
+    if (!$content.length) return;
+
+    if (tab === 'hex') {
+      const $hexDisplay = $content.find('.hex-display');
+      if ($hexDisplay.length) SearchHighlighter.highlightHexMatches($hexDisplay[0], matches);
+    } else if (tab === 'raw') {
+      const $textarea = $content.find('textarea');
+      if ($textarea.length) {
+        let $overlay = $content.find('.highlight-overlay');
+        if (!$overlay.length) {
+          DomUtils.createOverlayHighlighter($textarea[0]);
+          $overlay = $content.find('.highlight-overlay');
+        }
+        DomUtils.highlightOverlay($overlay[0], $textarea.val(), matches);
+      }
+    }
+    // Note: pretty tab uses hljs, search highlight on code not supported yet
+  }
+
+  // === Resizers ===
+  function initTableResizer() {
+    const $resizer = $('#table-resizer');
+    const $top = $('#request-table-area');
+    const $bottom = $('#http-detail-area');
+    if (!$resizer.length || !$top.length || !$bottom.length) return;
+
+    let isDragging = false, startY = 0, startTopH = 0, startBottomH = 0;
+
+    $resizer.on('mousedown', (e) => {
+      e.preventDefault();
+      isDragging = true;
+      startY = e.clientY;
+      startTopH = $top[0].getBoundingClientRect().height;
+      startBottomH = $bottom[0].getBoundingClientRect().height;
+      $resizer.addClass('dragging');
+      $('body').css('user-select', 'none');
+    });
+
+    $(document).on('mousemove.tableResize', (e) => {
+      if (!isDragging) return;
+      const delta = e.clientY - startY;
+      const total = startTopH + startBottomH;
+      let topRatio = ((startTopH + delta) / total) * 100;
+      topRatio = Math.max(10, Math.min(90, topRatio));
+      $top.css('flex', `1 1 ${topRatio}%`);
+      $bottom.css('flex', `1 1 ${100 - topRatio}%`);
+    });
+
+    $(document).on('mouseup.tableResize', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      $resizer.removeClass('dragging');
+      $('body').css('user-select', '');
+    });
+  }
+
+  function initPaneResizer() {
     const $resizer = $('#resizer');
     const $content = $('.content');
     if (!$resizer.length || !$content.length) return;
-
-    let isDragging = false;
-    let startPos = 0;
-    let startSizeReq = 0;
-    let startSizeRes = 0;
 
     const $reqPane = $('#request-pane');
     const $resPane = $('#response-pane');
     if (!$reqPane.length || !$resPane.length) return;
 
-    const onDown = (e) => {
-      e.preventDefault(); // B6 fix: prevent text selection during drag
+    let isDragging = false, startPos = 0, startSizeReq = 0, startSizeRes = 0;
+
+    $resizer.on('mousedown', (e) => {
+      e.preventDefault();
       isDragging = true;
       $resizer.addClass('dragging');
       if (LayoutManager.getCurrentLayout() === 'horizontal') {
@@ -437,172 +594,44 @@ import DomUtils from './utils/dom-utils.js';
         startSizeRes = $resPane[0].getBoundingClientRect().height;
       }
       $('body').css('user-select', 'none');
-    };
+    });
 
-    const onMove = (e) => {
+    $(document).on('mousemove.paneResize', (e) => {
       if (!isDragging) return;
-      let delta;
-      if (LayoutManager.getCurrentLayout() === 'horizontal') {
-        delta = e.clientX - startPos;
-      } else {
-        delta = e.clientY - startPos;
-      }
+      const delta = LayoutManager.getCurrentLayout() === 'horizontal'
+        ? e.clientX - startPos : e.clientY - startPos;
       const total = startSizeReq + startSizeRes;
       let reqRatio = ((startSizeReq + delta) / total) * 100;
       reqRatio = Math.max(10, Math.min(90, reqRatio));
-      const resRatio = 100 - reqRatio;
       $reqPane.css('flex', `0 0 ${reqRatio}%`);
-      $resPane.css('flex', `0 0 ${resRatio}%`);
-    };
+      $resPane.css('flex', `0 0 ${100 - reqRatio}%`);
+    });
 
-    const onUp = () => {
+    $(document).on('mouseup.paneResize', () => {
+      if (!isDragging) return;
       isDragging = false;
       $resizer.removeClass('dragging');
       $('body').css('user-select', '');
-    };
-
-    $resizer.on('mousedown', onDown);
-    $(document).on('mousemove', onMove);
-    $(document).on('mouseup', onUp);
-  }
-
-  function applyHighlights(pane, tab, matches) {
-    clearPaneHighlights(pane === 'request' ? 'req' : 'res');
-    if (!matches || matches.length === 0) return;
-
-    const $pane = $('#' + pane + '-pane');
-    if (!$pane.length) return;
-    const $content = $pane.find(`.tab-content[data-tab="${tab}"]`);
-    if (!$content.length) return;
-
-    if (tab === 'hex') {
-      const $hexDisplay = $content.find('.hex-display');
-      if ($hexDisplay.length) {
-        SearchHighlighter.highlightHexMatches($hexDisplay[0], matches);
-      }
-    } else {
-      const $textarea = $content.find('textarea');
-      if ($textarea.length) {
-        let $overlay = $content.find('.highlight-overlay');
-        if (!$overlay.length) {
-          DomUtils.createOverlayHighlighter($textarea[0]);
-          $overlay = $content.find('.highlight-overlay');
-        }
-        DomUtils.highlightOverlay($overlay[0], $textarea.val(), matches);
-      }
-    }
-  }
-
-  async function loadSchemes() {
-    schemes = await SessionStorage.loadSchemes();
-    const activeId = await SessionStorage.getActiveScheme();
-    activeScheme = schemes.find(s => s.id === activeId) || null;
-    // B1 fix: load fields for active scheme so session extraction works
-    if (activeScheme) {
-      activeScheme.fields = await SessionStorage.loadFields(activeScheme.id);
-    }
-    renderSchemeList();
-  }
-
-  function renderSchemeList() {
-    const $list = $('#scheme-list');
-    if (!$list.length) return;
-    $list.empty();
-    schemes.forEach(scheme => {
-      const activeBadge = scheme.isActive ? '<span class="badge bg-primary">Active</span>' : '';
-      const $item = $('<div>')
-        .addClass('list-group-item list-group-item-action d-flex justify-content-between align-items-center')
-        .html(`
-          <div>
-            <strong>${scheme.name}</strong> ${activeBadge}
-            <div class="text-muted small">${scheme.description || ''}</div>
-          </div>
-          <div>
-            <button class="btn btn-sm btn-outline-primary edit-scheme" data-id="${scheme.id}">Edit</button>
-            <button class="btn btn-sm btn-outline-success activate-scheme" data-id="${scheme.id}">Activate</button>
-            <button class="btn btn-sm btn-outline-danger delete-scheme" data-id="${scheme.id}">Delete</button>
-          </div>
-        `);
-
-      $item.find('.edit-scheme').on('click', async function(e) {
-        e.stopPropagation();
-        const id = $(this).attr('data-id');
-        const scheme = schemes.find(s => s.id === id);
-        if (!scheme) return;
-        editingSchemeId = id;
-        $('#scheme-name').val(scheme.name);
-        $('#scheme-domains').val((scheme.targetDomains || []).join(', '));
-        $('#scheme-regex').val(scheme.domainRegex || '');
-        $('#scheme-desc').val(scheme.description || '');
-        $('#scheme-editor').show();
-        const fields = await SessionStorage.loadFields(id);
-        renderFieldList(fields);
-      });
-
-      $item.find('.activate-scheme').on('click', async function(e) {
-        e.stopPropagation();
-        const id = $(this).attr('data-id');
-        await SessionStorage.setActiveScheme(id);
-        await loadSchemes();
-      });
-
-      $item.find('.delete-scheme').on('click', async function(e) {
-        e.stopPropagation();
-        const id = $(this).attr('data-id');
-        await SessionStorage.deleteScheme(id);
-        await loadSchemes();
-      });
-
-      $list.append($item);
     });
   }
 
-  function renderFieldList(fields) {
-    const $list = $('#field-list');
-    if (!$list.length) return;
-    $list.empty();
-    fields.forEach(field => {
-      const $item = $('<div>')
-        .addClass('list-group-item d-flex justify-content-between align-items-center')
-        .html(`
-          <div>
-            <strong>${field.name}</strong> <span class="badge bg-secondary">${field.mode}</span>
-            <div class="text-muted small">${field.location.type}: ${field.location.name || '-'} | ${field.pattern}</div>
-          </div>
-          <button class="btn btn-sm btn-outline-danger delete-field" data-id="${field.id}">Delete</button>
-        `);
-
-      $item.find('.delete-field').on('click', async function(e) {
-        e.stopPropagation();
-        const fieldId = $(this).attr('data-id');
-        if (editingSchemeId) {
-          await SessionStorage.deleteField(editingSchemeId, fieldId);
-          const fields = await SessionStorage.loadFields(editingSchemeId);
-          renderFieldList(fields);
-          // Update activeScheme.fields if editing the active scheme
-          if (activeScheme && activeScheme.id === editingSchemeId) {
-            activeScheme.fields = fields;
-          }
-        }
-      });
-
-      $list.append($item);
-    });
-  }
-
+  // === Session Extraction ===
   async function checkSessionExtraction(request) {
     if (!activeScheme) return;
-    // Ensure fields are loaded
     if (!activeScheme.fields) {
       activeScheme.fields = await SessionStorage.loadFields(activeScheme.id);
     }
     const result = SessionExtractor.applySchemeToRequest(request, activeScheme);
     if (result) {
-      const keys = Object.keys(result).join(', ');
-      ClipboardUtils.showToast(`Session extracted: ${keys}`, 3000);
+      ClipboardUtils.showToast(`Session extracted: ${Object.keys(result).join(', ')}`, 3000);
     }
   }
 
-  // Initial render
-  UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+  // === Utility ===
+  function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // === Initial Render ===
+  UiRenderer.renderRequestTable(NetworkHandler.getRequests(), selectedIndex, selectRequest);
 })();

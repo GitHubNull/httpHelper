@@ -98,6 +98,24 @@
 
 ---
 
+## [1.3.0] - 2026-06-27
+
+### Added
+- 新增 `table-manager.js` 表格管理模块
+- 新增 `Sortable.min.js` 第三方拖拽库
+- 新增 `highlight/` 代码高亮库目录
+
+### Changed
+- 优化内容格式化器（`content-formatter.js`）
+- 优化会话存储（`session-storage.js`）
+- 优化 UI 渲染器（`ui-renderer.js`）
+- 更新面板样式（`panel.css`）
+- 更新面板 HTML 结构（`panel.html`）
+- 更新主入口模块（`panel.js`）
+- 更新 `.gitignore`
+
+---
+
 ## [Unreleased]
 
 ### Added
