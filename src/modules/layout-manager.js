@@ -1,5 +1,5 @@
 /**
- * layout-manager.js - 布局切换管理（上下/左右/标签页）
+ * layout-manager.js - 布局切换管理（上下/左右/标签页）（jQuery 辅助封装）
  */
 
 const LayoutManager = {
@@ -8,35 +8,34 @@ const LayoutManager = {
 
   switchLayout(layout) {
     this.currentLayout = layout;
-    const contentEl = document.querySelector('.content');
-    if (!contentEl) return;
+    const $content = $('.content');
+    if (!$content.length) return;
 
-    contentEl.classList.remove('layout-vertical', 'layout-horizontal', 'layout-tabs');
-    contentEl.classList.add('layout-' + layout);
+    $content.removeClass('layout-vertical layout-horizontal layout-tabs')
+      .addClass('layout-' + layout);
 
-    const reqPane = document.getElementById('request-pane');
-    const resPane = document.getElementById('response-pane');
-    const resizer = document.getElementById('resizer');
-    if (!reqPane || !resPane) return;
+    const $reqPane = $('#request-pane');
+    const $resPane = $('#response-pane');
+    const $resizer = $('#resizer');
+    if (!$reqPane.length || !$resPane.length) return;
 
     // Update layout button active state
-    document.querySelectorAll('.layout-bar .layout-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.layout === layout);
-    });
+    $('.layout-bar .layout-btn').removeClass('active')
+      .filter(`[data-layout="${layout}"]`).addClass('active');
 
     if (layout === 'tabs') {
-      reqPane.classList.toggle('active-tab-pane', this.activeTabPane === 'request');
-      resPane.classList.toggle('active-tab-pane', this.activeTabPane === 'response');
-      if (resizer) resizer.style.display = 'none';
+      $reqPane.toggleClass('active-tab-pane', this.activeTabPane === 'request');
+      $resPane.toggleClass('active-tab-pane', this.activeTabPane === 'response');
+      // Clear inline flex from potential resizer drag (B4 fix)
+      $reqPane.css('flex', '');
+      $resPane.css('flex', '');
+      $resizer.hide();
     } else {
-      reqPane.classList.add('active-tab-pane');
-      resPane.classList.add('active-tab-pane');
-      reqPane.style.display = '';
-      resPane.style.display = '';
-      // Reset flex from potential resizer drag
-      reqPane.style.flex = '';
-      resPane.style.flex = '';
-      if (resizer) resizer.style.display = '';
+      $reqPane.addClass('active-tab-pane');
+      $resPane.addClass('active-tab-pane');
+      $reqPane.css({ display: '', flex: '' });
+      $resPane.css({ display: '', flex: '' });
+      $resizer.show();
     }
 
     this._updateResizerDirection(layout);
@@ -47,44 +46,45 @@ const LayoutManager = {
   },
 
   initLayoutButtons(container, onLayoutChange) {
-    if (!container) return;
-    container.querySelectorAll('.layout-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const layout = btn.dataset.layout;
-        this.switchLayout(layout);
-        if (onLayoutChange) onLayoutChange(layout);
-      });
+    const $container = $(container);
+    if (!$container.length) return;
+    const self = this;
+
+    // Set initial active button (B5 fix)
+    $container.find('.layout-btn').removeClass('active')
+      .filter(`[data-layout="${this.currentLayout}"]`).addClass('active');
+
+    $container.find('.layout-btn').on('click', function() {
+      const layout = $(this).attr('data-layout');
+      self.switchLayout(layout);
+      if (onLayoutChange) onLayoutChange(layout);
     });
   },
 
   showRequestPane() {
     this.activeTabPane = 'request';
     if (this.currentLayout === 'tabs') {
-      const reqPane = document.getElementById('request-pane');
-      const resPane = document.getElementById('response-pane');
-      if (reqPane) reqPane.classList.add('active-tab-pane');
-      if (resPane) resPane.classList.remove('active-tab-pane');
+      $('#request-pane').addClass('active-tab-pane');
+      $('#response-pane').removeClass('active-tab-pane');
     }
   },
 
   showResponsePane() {
     this.activeTabPane = 'response';
     if (this.currentLayout === 'tabs') {
-      const reqPane = document.getElementById('request-pane');
-      const resPane = document.getElementById('response-pane');
-      if (reqPane) reqPane.classList.remove('active-tab-pane');
-      if (resPane) resPane.classList.add('active-tab-pane');
+      $('#request-pane').removeClass('active-tab-pane');
+      $('#response-pane').addClass('active-tab-pane');
     }
   },
 
   _updateResizerDirection(layout) {
-    const resizer = document.getElementById('resizer');
-    if (!resizer) return;
-    resizer.classList.remove('resizer-vertical', 'resizer-horizontal');
+    const $resizer = $('#resizer');
+    if (!$resizer.length) return;
+    $resizer.removeClass('resizer-vertical resizer-horizontal');
     if (layout === 'horizontal') {
-      resizer.classList.add('resizer-horizontal');
+      $resizer.addClass('resizer-horizontal');
     } else {
-      resizer.classList.add('resizer-vertical');
+      $resizer.addClass('resizer-vertical');
     }
   }
 };

@@ -258,6 +258,18 @@ textarea {
   line-height: 1.45;
 }
 
+/* Textarea wrapper (for overlay alignment) */
+.textarea-wrapper {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.textarea-wrapper textarea {
+  flex: 1;
+}
+
 /* Hex view */
 .hex-view {
   flex: 1;

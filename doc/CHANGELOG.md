@@ -80,6 +80,24 @@
 
 ---
 
+## [1.2.0] - 2026-06-27
+
+### Added
+- 无
+
+### Changed
+- 优化布局管理器（`layout-manager.js`）
+- 优化搜索高亮功能（`search-highlighter.js`）
+- 优化 UI 渲染器（`ui-renderer.js`）
+- 更新面板样式（`panel.css`）
+- 更新主入口模块（`panel.js`）
+- 优化剪贴板工具（`clipboard-utils.js`）
+- 优化 DOM 工具（`dom-utils.js`）
+- 优化字符串工具（`string-utils.js`）
+- 更新 `manifest.json`
+
+---
+
 ## [Unreleased]
 
 ### Added

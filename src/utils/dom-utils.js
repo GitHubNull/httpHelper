@@ -1,5 +1,5 @@
 /**
- * dom-utils.js - 通用 DOM 操作工具
+ * dom-utils.js - 通用 DOM 操作工具（jQuery 辅助封装）
  */
 
 const DomUtils = {
@@ -13,35 +13,52 @@ const DomUtils = {
 
   updateLineNumbers(textarea, lineNumbersEl) {
     if (!textarea || !lineNumbersEl) return;
-    const text = textarea.value || '';
+    const $ta = $(textarea);
+    const $ln = $(lineNumbersEl);
+    if (!$ta.length || !$ln.length) return;
+    const text = $ta.val() || '';
     const lines = text.split('\n').length;
-    lineNumbersEl.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
+    $ln.text(Array.from({ length: lines }, (_, i) => i + 1).join('\n'));
   },
 
   createOverlayHighlighter(textarea) {
     if (!textarea) return null;
-    const container = textarea.parentElement;
-    if (!container) return null;
+    const $ta = $(textarea);
+    if (!$ta.length) return null;
 
-    let overlay = container.querySelector('.highlight-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'highlight-overlay';
-      overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden;white-space:pre;font-family:Consolas,Monaco,Courier New,monospace;font-size:11px;line-height:1.45;padding:8px;z-index:2;color:transparent;';
-      container.style.position = 'relative';
-      container.appendChild(overlay);
+    // Wrap textarea in a .textarea-wrapper if not already wrapped
+    let $wrapper = $ta.parent('.textarea-wrapper');
+    if ($wrapper.length === 0) {
+      $ta.wrap('<div class="textarea-wrapper"></div>');
+      $wrapper = $ta.parent('.textarea-wrapper');
     }
-    return overlay;
+
+    // Create overlay inside the wrapper (so it aligns with textarea, not line-numbers)
+    let $overlay = $wrapper.find('.highlight-overlay');
+    if ($overlay.length === 0) {
+      $overlay = $('<div class="highlight-overlay"></div>');
+      $wrapper.append($overlay);
+    }
+
+    // Sync overlay scroll position with textarea
+    const overlayEl = $overlay[0];
+    $ta.off('scroll.overlay').on('scroll.overlay', function() {
+      overlayEl.scrollTop = this.scrollTop;
+      overlayEl.scrollLeft = this.scrollLeft;
+    });
+
+    return overlayEl;
   },
 
   clearOverlay(overlay) {
-    if (overlay) overlay.innerHTML = '';
+    if (overlay) $(overlay).empty();
   },
 
   highlightOverlay(overlay, text, matches) {
     if (!overlay) return;
+    const $overlay = $(overlay);
     if (!matches || matches.length === 0) {
-      overlay.innerHTML = '';
+      $overlay.empty();
       return;
     }
     let html = '';
@@ -52,14 +69,12 @@ const DomUtils = {
       lastIndex = match.end;
     }
     html += this._escapeHtml(text.slice(lastIndex));
-    overlay.innerHTML = html;
+    $overlay.html(html);
   },
 
   _escapeHtml(text) {
     if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return $('<div>').text(text).html();
   }
 };
 

@@ -24,13 +24,13 @@ import DomUtils from './utils/dom-utils.js';
     res: { matches: [], currentIndex: -1 }
   };
 
-  // DOM refs
-  const reqText = document.getElementById('raw-request');
-  const prettyReqText = document.getElementById('pretty-request');
-  const resText = document.getElementById('raw-response');
-  const prettyResText = document.getElementById('pretty-response');
-  const hexReq = document.getElementById('hex-request');
-  const hexRes = document.getElementById('hex-response');
+  // DOM refs (jQuery)
+  const $reqText = $('#raw-request');
+  const $prettyReqText = $('#pretty-request');
+  const $resText = $('#raw-response');
+  const $prettyResText = $('#pretty-response');
+  const $hexReq = $('#hex-request');
+  const $hexRes = $('#hex-response');
 
   // Init
   NetworkHandler.initNetworkListener((request) => {
@@ -41,7 +41,7 @@ import DomUtils from './utils/dom-utils.js';
   loadSchemes();
 
   // Layout
-  LayoutManager.initLayoutButtons(document.querySelector('.layout-bar'), (layout) => {
+  LayoutManager.initLayoutButtons($('.layout-bar'), (layout) => {
     // LayoutManager.switchLayout already handles class and pane visibility
   });
 
@@ -53,41 +53,39 @@ import DomUtils from './utils/dom-utils.js';
   initPaneSearch('res');
 
   // Tab switching
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const pane = btn.dataset.pane;
-      const tab = btn.dataset.tab;
-      UiRenderer.switchTab(pane, tab);
-      if (currentRequest) {
-        refreshSearchForActiveTab();
-      }
-    });
+  $('.tab-btn').on('click', function() {
+    const pane = $(this).attr('data-pane');
+    const tab = $(this).attr('data-tab');
+    UiRenderer.switchTab(pane, tab);
+    if (currentRequest) {
+      refreshSearchForActiveTab();
+    }
   });
 
   // Tab layout pane switching
-  document.getElementById('switch-to-res')?.addEventListener('click', () => {
+  $('#switch-to-res').on('click', () => {
     LayoutManager.showResponsePane();
   });
-  document.getElementById('switch-to-req')?.addEventListener('click', () => {
+  $('#switch-to-req').on('click', () => {
     LayoutManager.showRequestPane();
   });
 
   // Copy / Download
-  document.getElementById('copy-req').addEventListener('click', () => {
+  $('#copy-req').on('click', () => {
     const pane = 'request';
     const tab = UiRenderer.getActiveTab(pane);
     const text = getPaneText(pane, tab);
     ClipboardUtils.copyText(text, 'Request copied!');
   });
 
-  document.getElementById('copy-res').addEventListener('click', () => {
+  $('#copy-res').on('click', () => {
     const pane = 'response';
     const tab = UiRenderer.getActiveTab(pane);
     const text = getPaneText(pane, tab);
     ClipboardUtils.copyText(text, 'Response copied!');
   });
 
-  document.getElementById('download-req').addEventListener('click', () => {
+  $('#download-req').on('click', () => {
     const request = NetworkHandler.getRequest(selectedIndex);
     const pane = 'request';
     const tab = UiRenderer.getActiveTab(pane);
@@ -96,7 +94,7 @@ import DomUtils from './utils/dom-utils.js';
     ClipboardUtils.downloadText(text, filename);
   });
 
-  document.getElementById('download-res').addEventListener('click', () => {
+  $('#download-res').on('click', () => {
     const request = NetworkHandler.getRequest(selectedIndex);
     const pane = 'response';
     const tab = UiRenderer.getActiveTab(pane);
@@ -105,49 +103,49 @@ import DomUtils from './utils/dom-utils.js';
     ClipboardUtils.downloadText(text, filename);
   });
 
-  document.getElementById('clear').addEventListener('click', () => {
+  $('#clear').on('click', () => {
     NetworkHandler.clearRequests();
     selectedIndex = -1;
     currentRequest = null;
     currentResponseBody = '';
-    reqText.value = '';
-    prettyReqText.value = '';
-    resText.value = '';
-    prettyResText.value = '';
-    hexReq.textContent = '';
-    hexRes.textContent = '';
+    $reqText.val('');
+    $prettyReqText.val('');
+    $resText.val('');
+    $prettyResText.val('');
+    $hexReq.text('');
+    $hexRes.text('');
     UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
   });
 
   // Session UI
-  document.getElementById('new-scheme-btn').addEventListener('click', () => {
+  $('#new-scheme-btn').on('click', () => {
     editingSchemeId = null;
-    document.getElementById('scheme-name').value = '';
-    document.getElementById('scheme-domains').value = '';
-    document.getElementById('scheme-regex').value = '';
-    document.getElementById('scheme-desc').value = '';
-    document.getElementById('scheme-editor').style.display = 'block';
+    $('#scheme-name').val('');
+    $('#scheme-domains').val('');
+    $('#scheme-regex').val('');
+    $('#scheme-desc').val('');
+    $('#scheme-editor').show();
     renderFieldList([]);
   });
 
-  document.getElementById('cancel-scheme-btn').addEventListener('click', () => {
-    document.getElementById('scheme-editor').style.display = 'none';
+  $('#cancel-scheme-btn').on('click', () => {
+    $('#scheme-editor').hide();
     editingSchemeId = null;
   });
 
-  document.getElementById('save-scheme-btn').addEventListener('click', async () => {
-    const name = document.getElementById('scheme-name').value.trim();
+  $('#save-scheme-btn').on('click', async () => {
+    const name = $('#scheme-name').val().trim();
     if (!name) {
       ClipboardUtils.showToast('Scheme name is required');
       return;
     }
-    const domains = document.getElementById('scheme-domains').value.split(',').map(s => s.trim()).filter(Boolean);
+    const domains = $('#scheme-domains').val().split(',').map(s => s.trim()).filter(Boolean);
     const scheme = {
       id: editingSchemeId || 'scheme_' + Date.now(),
       name: name,
       targetDomains: domains,
-      domainRegex: document.getElementById('scheme-regex').value.trim(),
-      description: document.getElementById('scheme-desc').value.trim(),
+      domainRegex: $('#scheme-regex').val().trim(),
+      description: $('#scheme-desc').val().trim(),
       isActive: false,
       persist: true
     };
@@ -161,20 +159,20 @@ import DomUtils from './utils/dom-utils.js';
       }
     }
     await loadSchemes();
-    document.getElementById('scheme-editor').style.display = 'none';
+    $('#scheme-editor').hide();
     editingSchemeId = null;
   });
 
-  document.getElementById('add-field-btn').addEventListener('click', async () => {
+  $('#add-field-btn').on('click', async () => {
     if (!editingSchemeId) {
       ClipboardUtils.showToast('Please save scheme first');
       return;
     }
-    const name = document.getElementById('field-name').value.trim();
-    const locationType = document.getElementById('field-location').value;
-    const locationName = document.getElementById('field-location-name').value.trim();
-    const mode = document.getElementById('field-mode').value;
-    const pattern = document.getElementById('field-pattern').value.trim();
+    const name = $('#field-name').val().trim();
+    const locationType = $('#field-location').val();
+    const locationName = $('#field-location-name').val().trim();
+    const mode = $('#field-mode').val();
+    const pattern = $('#field-pattern').val().trim();
     if (!name || !pattern) {
       ClipboardUtils.showToast('Field name and pattern are required');
       return;
@@ -191,16 +189,24 @@ import DomUtils from './utils/dom-utils.js';
       ClipboardUtils.showToast(result.message);
       return;
     }
-    document.getElementById('field-name').value = '';
-    document.getElementById('field-pattern').value = '';
+    $('#field-name').val('');
+    $('#field-pattern').val('');
     const fields = await SessionStorage.loadFields(editingSchemeId);
     renderFieldList(fields);
+    // Update activeScheme.fields if editing the active scheme
+    if (activeScheme && activeScheme.id === editingSchemeId) {
+      activeScheme.fields = fields;
+    }
   });
 
-  document.getElementById('copy-session-btn').addEventListener('click', async () => {
+  $('#copy-session-btn').on('click', async () => {
     if (!activeScheme || !currentRequest) {
       ClipboardUtils.showToast('No active scheme or request');
       return;
+    }
+    // Ensure fields are loaded (B1 fix)
+    if (!activeScheme.fields) {
+      activeScheme.fields = await SessionStorage.loadFields(activeScheme.id);
     }
     const result = SessionExtractor.applySchemeToRequest(currentRequest, activeScheme);
     if (result) {
@@ -216,6 +222,10 @@ import DomUtils from './utils/dom-utils.js';
     selectedIndex = index;
     const request = NetworkHandler.getRequest(index);
     currentRequest = request;
+
+    // B8 fix: clear old search highlights before loading new content
+    clearPaneHighlights('req');
+    clearPaneHighlights('res');
 
     UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
 
@@ -270,13 +280,13 @@ import DomUtils from './utils/dom-utils.js';
 
   function getPaneText(pane, tab) {
     if (pane === 'request') {
-      if (tab === 'raw') return reqText ? reqText.value : '';
-      if (tab === 'pretty') return prettyReqText ? prettyReqText.value : '';
-      if (tab === 'hex') return hexReq ? hexReq.textContent : '';
+      if (tab === 'raw') return $reqText.val();
+      if (tab === 'pretty') return $prettyReqText.val();
+      if (tab === 'hex') return $hexReq.text();
     } else {
-      if (tab === 'raw') return resText ? resText.value : '';
-      if (tab === 'pretty') return prettyResText ? prettyResText.value : '';
-      if (tab === 'hex') return hexRes ? hexRes.textContent : '';
+      if (tab === 'raw') return $resText.val();
+      if (tab === 'pretty') return $prettyResText.val();
+      if (tab === 'hex') return $hexRes.text();
     }
     return '';
   }
@@ -293,13 +303,13 @@ import DomUtils from './utils/dom-utils.js';
   }
 
   function updatePaneSearchCount(prefix) {
-    const countEl = document.getElementById(prefix + '-search-count');
-    if (!countEl) return;
+    const $count = $('#' + prefix + '-search-count');
+    if (!$count.length) return;
     const state = paneSearchState[prefix];
     if (state.matches.length > 0 && state.currentIndex >= 0) {
-      countEl.textContent = `${state.currentIndex + 1}/${state.matches.length}`;
+      $count.text(`${state.currentIndex + 1}/${state.matches.length}`);
     } else {
-      countEl.textContent = '0/0';
+      $count.text('0/0');
     }
   }
 
@@ -317,116 +327,116 @@ import DomUtils from './utils/dom-utils.js';
 
   function scrollToPaneMatch(prefix) {
     const pane = prefix === 'req' ? 'request' : 'response';
-    const paneEl = document.getElementById(pane + '-pane');
-    if (!paneEl) return;
+    const $pane = $('#' + pane + '-pane');
+    if (!$pane.length) return;
     const state = paneSearchState[prefix];
-    const overlay = paneEl.querySelector('.highlight-overlay');
-    if (overlay) {
-      const marks = overlay.querySelectorAll('mark.search-highlight');
-      if (marks[state.currentIndex]) {
-        marks[state.currentIndex].scrollIntoView({ block: 'center', behavior: 'smooth' });
-      }
+    const $marks = $pane.find('.highlight-overlay mark.search-highlight');
+    const $mark = $marks.eq(state.currentIndex);
+    if ($mark.length) {
+      $mark[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
   }
 
   function refreshSearchForActiveTab() {
     // Refresh both pane searches
     ['req', 'res'].forEach(prefix => {
-      const input = document.getElementById(prefix + '-search-input');
-      if (input && input.value) {
-        const regexBtn = document.getElementById(prefix + '-search-regex');
-        const caseBtn = document.getElementById(prefix + '-search-case');
+      const $input = $('#' + prefix + '-search-input');
+      if ($input.length && $input.val()) {
+        const $regexBtn = $('#' + prefix + '-search-regex');
+        const $caseBtn = $('#' + prefix + '-search-case');
         const options = {
-          useRegex: regexBtn ? regexBtn.classList.contains('active') : false,
-          caseSensitive: caseBtn ? caseBtn.classList.contains('active') : false
+          useRegex: $regexBtn.hasClass('active'),
+          caseSensitive: $caseBtn.hasClass('active')
         };
-        performPaneSearch(prefix, input.value, options);
+        performPaneSearch(prefix, $input.val(), options);
       }
     });
   }
 
   function initPaneSearch(prefix) {
-    const input = document.getElementById(prefix + '-search-input');
-    const regexToggle = document.getElementById(prefix + '-search-regex');
-    const caseToggle = document.getElementById(prefix + '-search-case');
-    const prevBtn = document.getElementById(prefix + '-search-prev');
-    const nextBtn = document.getElementById(prefix + '-search-next');
-    const countEl = document.getElementById(prefix + '-search-count');
+    const $input = $('#' + prefix + '-search-input');
+    const $regexToggle = $('#' + prefix + '-search-regex');
+    const $caseToggle = $('#' + prefix + '-search-case');
+    const $prevBtn = $('#' + prefix + '-search-prev');
+    const $nextBtn = $('#' + prefix + '-search-next');
+    const $countEl = $('#' + prefix + '-search-count');
 
-    const isToggleActive = (btn) => btn && btn.classList.contains('active');
+    const isToggleActive = ($btn) => $btn.hasClass('active');
 
     const doSearch = () => {
-      const text = input ? input.value : '';
+      const text = $input.length ? $input.val() : '';
       const options = {
-        useRegex: isToggleActive(regexToggle),
-        caseSensitive: isToggleActive(caseToggle)
+        useRegex: isToggleActive($regexToggle),
+        caseSensitive: isToggleActive($caseToggle)
       };
       if (!text) {
         clearPaneHighlights(prefix);
         paneSearchState[prefix].matches = [];
         paneSearchState[prefix].currentIndex = -1;
-        if (countEl) countEl.textContent = '0/0';
+        if ($countEl.length) $countEl.text('0/0');
         return;
       }
       performPaneSearch(prefix, text, options);
     };
 
-    if (input) input.addEventListener('input', DomUtils.debounce(doSearch, 300));
-    if (regexToggle) {
-      regexToggle.addEventListener('click', () => {
-        regexToggle.classList.toggle('active');
+    if ($input.length) $input.on('input', DomUtils.debounce(doSearch, 300));
+    if ($regexToggle.length) {
+      $regexToggle.on('click', () => {
+        $regexToggle.toggleClass('active');
         doSearch();
       });
     }
-    if (caseToggle) {
-      caseToggle.addEventListener('click', () => {
-        caseToggle.classList.toggle('active');
+    if ($caseToggle.length) {
+      $caseToggle.on('click', () => {
+        $caseToggle.toggleClass('active');
         doSearch();
       });
     }
-    if (prevBtn) prevBtn.addEventListener('click', () => navigatePaneMatch(prefix, 'prev'));
-    if (nextBtn) nextBtn.addEventListener('click', () => navigatePaneMatch(prefix, 'next'));
+    if ($prevBtn.length) $prevBtn.on('click', () => navigatePaneMatch(prefix, 'prev'));
+    if ($nextBtn.length) $nextBtn.on('click', () => navigatePaneMatch(prefix, 'next'));
   }
 
   function clearPaneHighlights(prefix) {
     const pane = prefix === 'req' ? 'request' : 'response';
-    const paneEl = document.getElementById(pane + '-pane');
-    if (!paneEl) return;
-    paneEl.querySelectorAll('.highlight-overlay').forEach(el => el.innerHTML = '');
-    paneEl.querySelectorAll('.hex-display').forEach(el => {
-      if (el.innerHTML !== el.textContent) {
-        el.textContent = el.textContent;
+    const $pane = $('#' + pane + '-pane');
+    if (!$pane.length) return;
+    $pane.find('.highlight-overlay').empty();
+    $pane.find('.hex-display').each(function() {
+      const $el = $(this);
+      if ($el.html() !== $el.text()) {
+        $el.text($el.text());
       }
     });
   }
 
   function initResizer() {
-    const resizer = document.getElementById('resizer');
-    const content = document.querySelector('.content');
-    if (!resizer || !content) return;
+    const $resizer = $('#resizer');
+    const $content = $('.content');
+    if (!$resizer.length || !$content.length) return;
 
     let isDragging = false;
     let startPos = 0;
     let startSizeReq = 0;
     let startSizeRes = 0;
 
-    const reqPane = document.getElementById('request-pane');
-    const resPane = document.getElementById('response-pane');
-    if (!reqPane || !resPane) return;
+    const $reqPane = $('#request-pane');
+    const $resPane = $('#response-pane');
+    if (!$reqPane.length || !$resPane.length) return;
 
     const onDown = (e) => {
+      e.preventDefault(); // B6 fix: prevent text selection during drag
       isDragging = true;
-      resizer.classList.add('dragging');
+      $resizer.addClass('dragging');
       if (LayoutManager.getCurrentLayout() === 'horizontal') {
         startPos = e.clientX;
-        startSizeReq = reqPane.getBoundingClientRect().width;
-        startSizeRes = resPane.getBoundingClientRect().width;
+        startSizeReq = $reqPane[0].getBoundingClientRect().width;
+        startSizeRes = $resPane[0].getBoundingClientRect().width;
       } else {
         startPos = e.clientY;
-        startSizeReq = reqPane.getBoundingClientRect().height;
-        startSizeRes = resPane.getBoundingClientRect().height;
+        startSizeReq = $reqPane[0].getBoundingClientRect().height;
+        startSizeRes = $resPane[0].getBoundingClientRect().height;
       }
-      document.body.style.userSelect = 'none';
+      $('body').css('user-select', 'none');
     };
 
     const onMove = (e) => {
@@ -441,153 +451,151 @@ import DomUtils from './utils/dom-utils.js';
       let reqRatio = ((startSizeReq + delta) / total) * 100;
       reqRatio = Math.max(10, Math.min(90, reqRatio));
       const resRatio = 100 - reqRatio;
-      reqPane.style.flex = `0 0 ${reqRatio}%`;
-      resPane.style.flex = `0 0 ${resRatio}%`;
+      $reqPane.css('flex', `0 0 ${reqRatio}%`);
+      $resPane.css('flex', `0 0 ${resRatio}%`);
     };
 
     const onUp = () => {
       isDragging = false;
-      resizer.classList.remove('dragging');
-      document.body.style.userSelect = '';
+      $resizer.removeClass('dragging');
+      $('body').css('user-select', '');
     };
 
-    resizer.addEventListener('mousedown', onDown);
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
+    $resizer.on('mousedown', onDown);
+    $(document).on('mousemove', onMove);
+    $(document).on('mouseup', onUp);
   }
 
   function applyHighlights(pane, tab, matches) {
     clearPaneHighlights(pane === 'request' ? 'req' : 'res');
     if (!matches || matches.length === 0) return;
 
-    const paneEl = document.getElementById(pane + '-pane');
-    if (!paneEl) return;
-    const contentEl = paneEl.querySelector(`.tab-content[data-tab="${tab}"]`);
-    if (!contentEl) return;
+    const $pane = $('#' + pane + '-pane');
+    if (!$pane.length) return;
+    const $content = $pane.find(`.tab-content[data-tab="${tab}"]`);
+    if (!$content.length) return;
 
     if (tab === 'hex') {
-      const hexDisplay = contentEl.querySelector('.hex-display');
-      if (hexDisplay) {
-        SearchHighlighter.highlightHexMatches(hexDisplay, matches);
+      const $hexDisplay = $content.find('.hex-display');
+      if ($hexDisplay.length) {
+        SearchHighlighter.highlightHexMatches($hexDisplay[0], matches);
       }
     } else {
-      const textarea = contentEl.querySelector('textarea');
-      if (textarea) {
-        let overlay = contentEl.querySelector('.highlight-overlay');
-        if (!overlay) {
-          overlay = DomUtils.createOverlayHighlighter(textarea);
+      const $textarea = $content.find('textarea');
+      if ($textarea.length) {
+        let $overlay = $content.find('.highlight-overlay');
+        if (!$overlay.length) {
+          DomUtils.createOverlayHighlighter($textarea[0]);
+          $overlay = $content.find('.highlight-overlay');
         }
-        DomUtils.highlightOverlay(overlay, textarea.value, matches);
+        DomUtils.highlightOverlay($overlay[0], $textarea.val(), matches);
       }
     }
-  }
-
-  function clearAllHighlights() {
-    document.querySelectorAll('.highlight-overlay').forEach(el => el.innerHTML = '');
-    document.querySelectorAll('.hex-display').forEach(el => {
-      if (el.innerHTML !== el.textContent) {
-        el.textContent = el.textContent;
-      }
-    });
   }
 
   async function loadSchemes() {
     schemes = await SessionStorage.loadSchemes();
     const activeId = await SessionStorage.getActiveScheme();
     activeScheme = schemes.find(s => s.id === activeId) || null;
+    // B1 fix: load fields for active scheme so session extraction works
+    if (activeScheme) {
+      activeScheme.fields = await SessionStorage.loadFields(activeScheme.id);
+    }
     renderSchemeList();
   }
 
   function renderSchemeList() {
-    const list = document.getElementById('scheme-list');
-    if (!list) return;
-    list.innerHTML = '';
+    const $list = $('#scheme-list');
+    if (!$list.length) return;
+    $list.empty();
     schemes.forEach(scheme => {
-      const item = document.createElement('div');
-      item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
       const activeBadge = scheme.isActive ? '<span class="badge bg-primary">Active</span>' : '';
-      item.innerHTML = `
-        <div>
-          <strong>${scheme.name}</strong> ${activeBadge}
-          <div class="text-muted small">${scheme.description || ''}</div>
-        </div>
-        <div>
-          <button class="btn btn-sm btn-outline-primary edit-scheme" data-id="${scheme.id}">Edit</button>
-          <button class="btn btn-sm btn-outline-success activate-scheme" data-id="${scheme.id}">Activate</button>
-          <button class="btn btn-sm btn-outline-danger delete-scheme" data-id="${scheme.id}">Delete</button>
-        </div>
-      `;
-      list.appendChild(item);
-    });
+      const $item = $('<div>')
+        .addClass('list-group-item list-group-item-action d-flex justify-content-between align-items-center')
+        .html(`
+          <div>
+            <strong>${scheme.name}</strong> ${activeBadge}
+            <div class="text-muted small">${scheme.description || ''}</div>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-outline-primary edit-scheme" data-id="${scheme.id}">Edit</button>
+            <button class="btn btn-sm btn-outline-success activate-scheme" data-id="${scheme.id}">Activate</button>
+            <button class="btn btn-sm btn-outline-danger delete-scheme" data-id="${scheme.id}">Delete</button>
+          </div>
+        `);
 
-    list.querySelectorAll('.edit-scheme').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      $item.find('.edit-scheme').on('click', async function(e) {
         e.stopPropagation();
-        const id = btn.dataset.id;
+        const id = $(this).attr('data-id');
         const scheme = schemes.find(s => s.id === id);
         if (!scheme) return;
         editingSchemeId = id;
-        document.getElementById('scheme-name').value = scheme.name;
-        document.getElementById('scheme-domains').value = (scheme.targetDomains || []).join(', ');
-        document.getElementById('scheme-regex').value = scheme.domainRegex || '';
-        document.getElementById('scheme-desc').value = scheme.description || '';
-        document.getElementById('scheme-editor').style.display = 'block';
+        $('#scheme-name').val(scheme.name);
+        $('#scheme-domains').val((scheme.targetDomains || []).join(', '));
+        $('#scheme-regex').val(scheme.domainRegex || '');
+        $('#scheme-desc').val(scheme.description || '');
+        $('#scheme-editor').show();
         const fields = await SessionStorage.loadFields(id);
         renderFieldList(fields);
       });
-    });
 
-    list.querySelectorAll('.activate-scheme').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      $item.find('.activate-scheme').on('click', async function(e) {
         e.stopPropagation();
-        const id = btn.dataset.id;
+        const id = $(this).attr('data-id');
         await SessionStorage.setActiveScheme(id);
         await loadSchemes();
       });
-    });
 
-    list.querySelectorAll('.delete-scheme').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      $item.find('.delete-scheme').on('click', async function(e) {
         e.stopPropagation();
-        const id = btn.dataset.id;
+        const id = $(this).attr('data-id');
         await SessionStorage.deleteScheme(id);
         await loadSchemes();
       });
+
+      $list.append($item);
     });
   }
 
   function renderFieldList(fields) {
-    const list = document.getElementById('field-list');
-    if (!list) return;
-    list.innerHTML = '';
+    const $list = $('#field-list');
+    if (!$list.length) return;
+    $list.empty();
     fields.forEach(field => {
-      const item = document.createElement('div');
-      item.className = 'list-group-item d-flex justify-content-between align-items-center';
-      item.innerHTML = `
-        <div>
-          <strong>${field.name}</strong> <span class="badge bg-secondary">${field.mode}</span>
-          <div class="text-muted small">${field.location.type}: ${field.location.name || '-'} | ${field.pattern}</div>
-        </div>
-        <button class="btn btn-sm btn-outline-danger delete-field" data-id="${field.id}">Delete</button>
-      `;
-      list.appendChild(item);
-    });
+      const $item = $('<div>')
+        .addClass('list-group-item d-flex justify-content-between align-items-center')
+        .html(`
+          <div>
+            <strong>${field.name}</strong> <span class="badge bg-secondary">${field.mode}</span>
+            <div class="text-muted small">${field.location.type}: ${field.location.name || '-'} | ${field.pattern}</div>
+          </div>
+          <button class="btn btn-sm btn-outline-danger delete-field" data-id="${field.id}">Delete</button>
+        `);
 
-    list.querySelectorAll('.delete-field').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      $item.find('.delete-field').on('click', async function(e) {
         e.stopPropagation();
-        const fieldId = btn.dataset.id;
+        const fieldId = $(this).attr('data-id');
         if (editingSchemeId) {
           await SessionStorage.deleteField(editingSchemeId, fieldId);
           const fields = await SessionStorage.loadFields(editingSchemeId);
           renderFieldList(fields);
+          // Update activeScheme.fields if editing the active scheme
+          if (activeScheme && activeScheme.id === editingSchemeId) {
+            activeScheme.fields = fields;
+          }
         }
       });
+
+      $list.append($item);
     });
   }
 
   async function checkSessionExtraction(request) {
     if (!activeScheme) return;
+    // Ensure fields are loaded
+    if (!activeScheme.fields) {
+      activeScheme.fields = await SessionStorage.loadFields(activeScheme.id);
+    }
     const result = SessionExtractor.applySchemeToRequest(request, activeScheme);
     if (result) {
       const keys = Object.keys(result).join(', ');
