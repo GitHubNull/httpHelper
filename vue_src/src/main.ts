@@ -1,0 +1,35 @@
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import PrimeVue from 'primevue/config'
+import Aura from '@primeuix/themes/aura'
+import ToastService from 'primevue/toastservice'
+import Tooltip from 'primevue/tooltip'
+
+import 'primeicons/primeicons.css'
+import 'highlight.js/styles/github.css'
+import '@/styles/panel.css'
+
+import hljs from 'highlight.js/lib/core'
+import http from 'highlight.js/lib/languages/http'
+import json from 'highlight.js/lib/languages/json'
+import xml from 'highlight.js/lib/languages/xml'
+
+import App from './App.vue'
+
+hljs.registerLanguage('http', http)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('xml', xml)
+
+const app = createApp(App)
+app.use(createPinia())
+app.use(PrimeVue, {
+    theme: {
+        preset: Aura,
+        options: {
+            darkModeSelector: '@media (prefers-color-scheme: dark)'
+        }
+    }
+})
+app.use(ToastService)
+app.directive('tooltip', Tooltip)
+app.mount('#app')

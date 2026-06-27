@@ -35,6 +35,7 @@ target/
 build/
 dist/
 node_modules/
+vue_dst/
 
 # Temporary files
 tmp/
