@@ -4,6 +4,7 @@
 
 const LayoutManager = {
   currentLayout: 'vertical',
+  activeTabPane: 'request',
 
   switchLayout(layout) {
     this.currentLayout = layout;
@@ -15,15 +16,30 @@ const LayoutManager = {
 
     const reqPane = document.getElementById('request-pane');
     const resPane = document.getElementById('response-pane');
+    const resizer = document.getElementById('resizer');
     if (!reqPane || !resPane) return;
 
+    // Update layout button active state
+    document.querySelectorAll('.layout-bar .layout-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.layout === layout);
+    });
+
     if (layout === 'tabs') {
-      reqPane.style.display = 'block';
-      resPane.style.display = 'none';
+      reqPane.classList.toggle('active-tab-pane', this.activeTabPane === 'request');
+      resPane.classList.toggle('active-tab-pane', this.activeTabPane === 'response');
+      if (resizer) resizer.style.display = 'none';
     } else {
-      reqPane.style.display = 'flex';
-      resPane.style.display = 'flex';
+      reqPane.classList.add('active-tab-pane');
+      resPane.classList.add('active-tab-pane');
+      reqPane.style.display = '';
+      resPane.style.display = '';
+      // Reset flex from potential resizer drag
+      reqPane.style.flex = '';
+      resPane.style.flex = '';
+      if (resizer) resizer.style.display = '';
     }
+
+    this._updateResizerDirection(layout);
   },
 
   getCurrentLayout() {
@@ -42,20 +58,33 @@ const LayoutManager = {
   },
 
   showRequestPane() {
-    const reqPane = document.getElementById('request-pane');
-    const resPane = document.getElementById('response-pane');
-    if (reqPane && resPane) {
-      reqPane.style.display = 'flex';
-      resPane.style.display = 'none';
+    this.activeTabPane = 'request';
+    if (this.currentLayout === 'tabs') {
+      const reqPane = document.getElementById('request-pane');
+      const resPane = document.getElementById('response-pane');
+      if (reqPane) reqPane.classList.add('active-tab-pane');
+      if (resPane) resPane.classList.remove('active-tab-pane');
     }
   },
 
   showResponsePane() {
-    const reqPane = document.getElementById('request-pane');
-    const resPane = document.getElementById('response-pane');
-    if (reqPane && resPane) {
-      reqPane.style.display = 'none';
-      resPane.style.display = 'flex';
+    this.activeTabPane = 'response';
+    if (this.currentLayout === 'tabs') {
+      const reqPane = document.getElementById('request-pane');
+      const resPane = document.getElementById('response-pane');
+      if (reqPane) reqPane.classList.remove('active-tab-pane');
+      if (resPane) resPane.classList.add('active-tab-pane');
+    }
+  },
+
+  _updateResizerDirection(layout) {
+    const resizer = document.getElementById('resizer');
+    if (!resizer) return;
+    resizer.classList.remove('resizer-vertical', 'resizer-horizontal');
+    if (layout === 'horizontal') {
+      resizer.classList.add('resizer-horizontal');
+    } else {
+      resizer.classList.add('resizer-vertical');
     }
   }
 };

@@ -64,6 +64,22 @@
 
 ---
 
+## [1.1.0] - 2026-06-27
+
+### Added
+- 新增 LICENSE 文件
+- 新增英文 README（`README.en.md`）
+
+### Changed
+- 优化布局管理器（`layout-manager.js`）
+- 优化搜索高亮功能（`search-highlighter.js`）
+- 更新面板样式（`panel.css`）
+- 更新面板 HTML 结构（`panel.html`）
+- 更新主入口模块（`panel.js`）
+- 更新 README.md
+
+---
+
 ## [Unreleased]
 
 ### Added

@@ -18,11 +18,13 @@ const SearchHighlighter = {
     const nextBtn = container.querySelector('#search-next');
     const countEl = container.querySelector('#search-count');
 
+    const isToggleActive = (btn) => btn && (btn.classList ? btn.classList.contains('active') : btn.checked);
+
     const doSearch = () => {
       const text = searchInput ? searchInput.value : '';
       const options = {
-        useRegex: regexToggle ? regexToggle.checked : false,
-        caseSensitive: caseToggle ? caseToggle.checked : false
+        useRegex: isToggleActive(regexToggle),
+        caseSensitive: isToggleActive(caseToggle)
       };
       this.lastSearchText = text;
       this.lastOptions = options;
@@ -33,8 +35,20 @@ const SearchHighlighter = {
     if (searchInput) {
       searchInput.addEventListener('input', DomUtils.debounce(doSearch, 300));
     }
-    if (regexToggle) regexToggle.addEventListener('change', doSearch);
-    if (caseToggle) caseToggle.addEventListener('change', doSearch);
+    if (regexToggle) {
+      const eventType = regexToggle.tagName === 'INPUT' ? 'change' : 'click';
+      regexToggle.addEventListener(eventType, () => {
+        if (regexToggle.tagName === 'BUTTON') regexToggle.classList.toggle('active');
+        doSearch();
+      });
+    }
+    if (caseToggle) {
+      const eventType = caseToggle.tagName === 'INPUT' ? 'change' : 'click';
+      caseToggle.addEventListener(eventType, () => {
+        if (caseToggle.tagName === 'BUTTON') caseToggle.classList.toggle('active');
+        doSearch();
+      });
+    }
     if (prevBtn) prevBtn.addEventListener('click', () => this.navigateMatch('prev'));
     if (nextBtn) nextBtn.addEventListener('click', () => this.navigateMatch('next'));
   },
@@ -125,14 +139,14 @@ const SearchHighlighter = {
   },
 
   _scrollToMatch() {
-    // Scroll to match in the active content area
-    const activePane = document.querySelector('.tab-content.active');
-    if (!activePane) return;
-    const overlay = activePane.querySelector('.highlight-overlay');
-    if (overlay) {
+    // Scroll to match in any visible content area
+    const overlays = document.querySelectorAll('.highlight-overlay');
+    for (const overlay of overlays) {
+      if (overlay.offsetParent === null) continue; // skip hidden overlays
       const marks = overlay.querySelectorAll('mark.search-highlight');
       if (marks[this.currentMatchIndex]) {
         marks[this.currentMatchIndex].scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return;
       }
     }
   },

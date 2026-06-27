@@ -9,22 +9,6 @@
   <div class="toolbar">
     <button id="clear">Clear All</button>
     <span id="count">0 requests</span>
-
-    <div class="layout-controls">
-      <button class="layout-btn" data-layout="vertical" title="Vertical Layout">&#8597;</button>
-      <button class="layout-btn" data-layout="horizontal" title="Horizontal Layout">&#8596;</button>
-      <button class="layout-btn" data-layout="tabs" title="Tab Layout">&#9776;</button>
-    </div>
-
-    <div class="search-controls">
-      <input type="text" id="search-input" placeholder="Search..." class="form-control form-control-sm">
-      <label class="form-check-label"><input type="checkbox" id="search-regex" class="form-check-input"> Regex</label>
-      <label class="form-check-label"><input type="checkbox" id="search-case" class="form-check-input"> Case</label>
-      <span id="search-count">0/0</span>
-      <button id="search-prev" class="btn btn-sm btn-outline-secondary">&#9664;</button>
-      <button id="search-next" class="btn btn-sm btn-outline-secondary">&#9654;</button>
-    </div>
-
     <button id="session-btn" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#sessionModal">Session</button>
   </div>
 
@@ -33,12 +17,26 @@
       <div id="request-list"></div>
     </div>
     <div class="content layout-vertical">
+      <div class="layout-bar">
+        <button class="layout-btn" data-layout="vertical" title="Vertical Layout">&#8597;</button>
+        <button class="layout-btn" data-layout="horizontal" title="Horizontal Layout">&#8596;</button>
+        <button class="layout-btn" data-layout="tabs" title="Tab Layout">&#9776;</button>
+      </div>
       <div class="pane" id="request-pane">
         <div class="pane-header">
           <div class="tab-nav">
             <button class="tab-btn active" data-tab="raw" data-pane="request">Raw</button>
             <button class="tab-btn" data-tab="pretty" data-pane="request">Pretty</button>
             <button class="tab-btn" data-tab="hex" data-pane="request">Hex</button>
+          </div>
+          <button class="tab-switch-btn" id="switch-to-res" title="Switch to Response">Response &gt;</button>
+          <div class="pane-search" id="req-search-box">
+            <input type="text" id="req-search-input" placeholder="Find in request...">
+            <button class="search-toggle" id="req-search-regex" title="Regex">.*</button>
+            <button class="search-toggle" id="req-search-case" title="Case sensitive">Aa</button>
+            <span id="req-search-count" class="pane-search-count">0/0</span>
+            <button id="req-search-prev">&#9664;</button>
+            <button id="req-search-next">&#9654;</button>
           </div>
           <div class="pane-actions">
             <button id="copy-req">Copy</button>
@@ -63,12 +61,22 @@
           </div>
         </div>
       </div>
+      <div class="resizer resizer-vertical" id="resizer"></div>
       <div class="pane" id="response-pane">
         <div class="pane-header">
+          <button class="tab-switch-btn" id="switch-to-req" title="Switch to Request">&lt; Request</button>
           <div class="tab-nav">
             <button class="tab-btn active" data-tab="raw" data-pane="response">Raw</button>
             <button class="tab-btn" data-tab="pretty" data-pane="response">Pretty</button>
             <button class="tab-btn" data-tab="hex" data-pane="response">Hex</button>
+          </div>
+          <div class="pane-search" id="res-search-box">
+            <input type="text" id="res-search-input" placeholder="Find in response...">
+            <button class="search-toggle" id="res-search-regex" title="Regex">.*</button>
+            <button class="search-toggle" id="res-search-case" title="Case sensitive">Aa</button>
+            <span id="res-search-count" class="pane-search-count">0/0</span>
+            <button id="res-search-prev">&#9664;</button>
+            <button id="res-search-next">&#9654;</button>
           </div>
           <div class="pane-actions">
             <button id="copy-res">Copy</button>

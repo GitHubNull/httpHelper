@@ -18,6 +18,12 @@ import DomUtils from './utils/dom-utils.js';
   let activeScheme = null;
   let editingSchemeId = null;
 
+  // Per-pane search state
+  const paneSearchState = {
+    req: { matches: [], currentIndex: -1 },
+    res: { matches: [], currentIndex: -1 }
+  };
+
   // DOM refs
   const reqText = document.getElementById('raw-request');
   const prettyReqText = document.getElementById('pretty-request');
@@ -35,14 +41,16 @@ import DomUtils from './utils/dom-utils.js';
   loadSchemes();
 
   // Layout
-  LayoutManager.initLayoutButtons(document.querySelector('.layout-controls'), (layout) => {
-    document.querySelector('.content').className = 'content layout-' + layout;
+  LayoutManager.initLayoutButtons(document.querySelector('.layout-bar'), (layout) => {
+    // LayoutManager.switchLayout already handles class and pane visibility
   });
 
-  // Search
-  SearchHighlighter.initSearch(document.querySelector('.search-controls'), (text, options) => {
-    performGlobalSearch(text, options);
-  });
+  // Resizer drag
+  initResizer();
+
+  // Pane-local searches
+  initPaneSearch('req');
+  initPaneSearch('res');
 
   // Tab switching
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -54,6 +62,14 @@ import DomUtils from './utils/dom-utils.js';
         refreshSearchForActiveTab();
       }
     });
+  });
+
+  // Tab layout pane switching
+  document.getElementById('switch-to-res')?.addEventListener('click', () => {
+    LayoutManager.showResponsePane();
+  });
+  document.getElementById('switch-to-req')?.addEventListener('click', () => {
+    LayoutManager.showRequestPane();
   });
 
   // Copy / Download
@@ -265,29 +281,183 @@ import DomUtils from './utils/dom-utils.js';
     return '';
   }
 
-  function performGlobalSearch(pattern, options) {
-    if (!pattern) {
-      SearchHighlighter.clearHighlights();
-      clearAllHighlights();
-      return;
-    }
-    const pane = 'request';
+  function performPaneSearch(prefix, pattern, options) {
+    const pane = prefix === 'req' ? 'request' : 'response';
     const tab = UiRenderer.getActiveTab(pane);
     const text = getPaneText(pane, tab);
     const matches = SearchHighlighter.performSearch(text, pattern, options);
+    paneSearchState[prefix].matches = matches;
+    paneSearchState[prefix].currentIndex = matches.length > 0 ? 0 : -1;
     applyHighlights(pane, tab, matches);
+    updatePaneSearchCount(prefix);
   }
 
-  function refreshSearchForActiveTab() {
-    const text = SearchHighlighter.lastSearchText;
-    const options = SearchHighlighter.lastOptions;
-    if (text) {
-      performGlobalSearch(text, options);
+  function updatePaneSearchCount(prefix) {
+    const countEl = document.getElementById(prefix + '-search-count');
+    if (!countEl) return;
+    const state = paneSearchState[prefix];
+    if (state.matches.length > 0 && state.currentIndex >= 0) {
+      countEl.textContent = `${state.currentIndex + 1}/${state.matches.length}`;
+    } else {
+      countEl.textContent = '0/0';
     }
   }
 
+  function navigatePaneMatch(prefix, direction) {
+    const state = paneSearchState[prefix];
+    if (state.matches.length === 0) return;
+    if (direction === 'next') {
+      state.currentIndex = (state.currentIndex + 1) % state.matches.length;
+    } else {
+      state.currentIndex = (state.currentIndex - 1 + state.matches.length) % state.matches.length;
+    }
+    updatePaneSearchCount(prefix);
+    scrollToPaneMatch(prefix);
+  }
+
+  function scrollToPaneMatch(prefix) {
+    const pane = prefix === 'req' ? 'request' : 'response';
+    const paneEl = document.getElementById(pane + '-pane');
+    if (!paneEl) return;
+    const state = paneSearchState[prefix];
+    const overlay = paneEl.querySelector('.highlight-overlay');
+    if (overlay) {
+      const marks = overlay.querySelectorAll('mark.search-highlight');
+      if (marks[state.currentIndex]) {
+        marks[state.currentIndex].scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+  }
+
+  function refreshSearchForActiveTab() {
+    // Refresh both pane searches
+    ['req', 'res'].forEach(prefix => {
+      const input = document.getElementById(prefix + '-search-input');
+      if (input && input.value) {
+        const regexBtn = document.getElementById(prefix + '-search-regex');
+        const caseBtn = document.getElementById(prefix + '-search-case');
+        const options = {
+          useRegex: regexBtn ? regexBtn.classList.contains('active') : false,
+          caseSensitive: caseBtn ? caseBtn.classList.contains('active') : false
+        };
+        performPaneSearch(prefix, input.value, options);
+      }
+    });
+  }
+
+  function initPaneSearch(prefix) {
+    const input = document.getElementById(prefix + '-search-input');
+    const regexToggle = document.getElementById(prefix + '-search-regex');
+    const caseToggle = document.getElementById(prefix + '-search-case');
+    const prevBtn = document.getElementById(prefix + '-search-prev');
+    const nextBtn = document.getElementById(prefix + '-search-next');
+    const countEl = document.getElementById(prefix + '-search-count');
+
+    const isToggleActive = (btn) => btn && btn.classList.contains('active');
+
+    const doSearch = () => {
+      const text = input ? input.value : '';
+      const options = {
+        useRegex: isToggleActive(regexToggle),
+        caseSensitive: isToggleActive(caseToggle)
+      };
+      if (!text) {
+        clearPaneHighlights(prefix);
+        paneSearchState[prefix].matches = [];
+        paneSearchState[prefix].currentIndex = -1;
+        if (countEl) countEl.textContent = '0/0';
+        return;
+      }
+      performPaneSearch(prefix, text, options);
+    };
+
+    if (input) input.addEventListener('input', DomUtils.debounce(doSearch, 300));
+    if (regexToggle) {
+      regexToggle.addEventListener('click', () => {
+        regexToggle.classList.toggle('active');
+        doSearch();
+      });
+    }
+    if (caseToggle) {
+      caseToggle.addEventListener('click', () => {
+        caseToggle.classList.toggle('active');
+        doSearch();
+      });
+    }
+    if (prevBtn) prevBtn.addEventListener('click', () => navigatePaneMatch(prefix, 'prev'));
+    if (nextBtn) nextBtn.addEventListener('click', () => navigatePaneMatch(prefix, 'next'));
+  }
+
+  function clearPaneHighlights(prefix) {
+    const pane = prefix === 'req' ? 'request' : 'response';
+    const paneEl = document.getElementById(pane + '-pane');
+    if (!paneEl) return;
+    paneEl.querySelectorAll('.highlight-overlay').forEach(el => el.innerHTML = '');
+    paneEl.querySelectorAll('.hex-display').forEach(el => {
+      if (el.innerHTML !== el.textContent) {
+        el.textContent = el.textContent;
+      }
+    });
+  }
+
+  function initResizer() {
+    const resizer = document.getElementById('resizer');
+    const content = document.querySelector('.content');
+    if (!resizer || !content) return;
+
+    let isDragging = false;
+    let startPos = 0;
+    let startSizeReq = 0;
+    let startSizeRes = 0;
+
+    const reqPane = document.getElementById('request-pane');
+    const resPane = document.getElementById('response-pane');
+    if (!reqPane || !resPane) return;
+
+    const onDown = (e) => {
+      isDragging = true;
+      resizer.classList.add('dragging');
+      if (LayoutManager.getCurrentLayout() === 'horizontal') {
+        startPos = e.clientX;
+        startSizeReq = reqPane.getBoundingClientRect().width;
+        startSizeRes = resPane.getBoundingClientRect().width;
+      } else {
+        startPos = e.clientY;
+        startSizeReq = reqPane.getBoundingClientRect().height;
+        startSizeRes = resPane.getBoundingClientRect().height;
+      }
+      document.body.style.userSelect = 'none';
+    };
+
+    const onMove = (e) => {
+      if (!isDragging) return;
+      let delta;
+      if (LayoutManager.getCurrentLayout() === 'horizontal') {
+        delta = e.clientX - startPos;
+      } else {
+        delta = e.clientY - startPos;
+      }
+      const total = startSizeReq + startSizeRes;
+      let reqRatio = ((startSizeReq + delta) / total) * 100;
+      reqRatio = Math.max(10, Math.min(90, reqRatio));
+      const resRatio = 100 - reqRatio;
+      reqPane.style.flex = `0 0 ${reqRatio}%`;
+      resPane.style.flex = `0 0 ${resRatio}%`;
+    };
+
+    const onUp = () => {
+      isDragging = false;
+      resizer.classList.remove('dragging');
+      document.body.style.userSelect = '';
+    };
+
+    resizer.addEventListener('mousedown', onDown);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
   function applyHighlights(pane, tab, matches) {
-    clearAllHighlights();
+    clearPaneHighlights(pane === 'request' ? 'req' : 'res');
     if (!matches || matches.length === 0) return;
 
     const paneEl = document.getElementById(pane + '-pane');
