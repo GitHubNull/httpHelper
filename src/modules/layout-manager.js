@@ -24,13 +24,14 @@ const LayoutManager = {
       .filter(`[data-layout="${layout}"]`).addClass('active');
 
     if (layout === 'tabs') {
+      // In tabs mode, show the active pane
       $reqPane.toggleClass('active-tab-pane', this.activeTabPane === 'request');
       $resPane.toggleClass('active-tab-pane', this.activeTabPane === 'response');
-      // Clear inline flex from potential resizer drag (B4 fix)
       $reqPane.css('flex', '');
       $resPane.css('flex', '');
       $resizer.hide();
     } else {
+      // In vertical/horizontal mode, both panes visible
       $reqPane.addClass('active-tab-pane');
       $resPane.addClass('active-tab-pane');
       $reqPane.css({ display: '', flex: '' });
