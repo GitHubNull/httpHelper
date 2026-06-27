@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-06-28
+
+### Fixed
+- 修复标签页布局下请求/响应面板切换时搜索高亮未实时清除的问题
+- 修复标签页切换按钮使用原生 `<button>` 替代 PrimeVue `Button` 组件以提升样式可控性
+
 ## [2.0.0] - 2026-06-28
 
 ### Added

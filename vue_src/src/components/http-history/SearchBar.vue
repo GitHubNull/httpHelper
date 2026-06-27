@@ -70,6 +70,7 @@ const hasText = computed(() => searchText.value.length > 0)
 const doSearch = debounce(() => {
     if (!searchText.value) {
         searchStore.clearSearch(props.pane)
+        refreshHighlight()
         return
     }
     searchStore.setSearchText(props.pane, searchText.value)
@@ -79,6 +80,7 @@ const doSearch = debounce(() => {
 function onSearchInput() {
     if (!searchText.value) {
         searchStore.clearSearch(props.pane)
+        refreshHighlight()
         return
     }
     doSearch()
@@ -88,6 +90,7 @@ function clearSearch() {
     if (searchText.value) {
         searchText.value = ''
         searchStore.clearSearch(props.pane)
+        refreshHighlight()
     }
 }
 

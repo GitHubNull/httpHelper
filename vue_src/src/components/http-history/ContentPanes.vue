@@ -3,24 +3,22 @@
         <!-- Tabs layout: show pane switcher -->
         <template v-if="selectionStore.currentLayout === 'tabs'">
             <div class="pane-tab-switcher d-flex align-items-center gap-1 px-2 border-bottom flex-shrink-0">
-                <Button
-                    label="请求"
+                <button
                     @click="selectionStore.switchPaneTab('request')"
                     :class="['pane-tab-btn', { 'tab-active': selectionStore.activePaneTab === 'request' }]"
-                    text
-                    size="small"
-                />
-                <Button
-                    label="响应"
+                >
+                    请求
+                </button>
+                <button
                     @click="selectionStore.switchPaneTab('response')"
                     :class="['pane-tab-btn', { 'tab-active': selectionStore.activePaneTab === 'response' }]"
-                    text
-                    size="small"
-                />
+                >
+                    响应
+                </button>
             </div>
             <div class="flex-grow-1 overflow-hidden">
-                <RequestPane v-show="selectionStore.activePaneTab === 'request'" class="h-100" />
-                <ResponsePane v-show="selectionStore.activePaneTab === 'response'" class="h-100" />
+                <RequestPane v-if="selectionStore.activePaneTab === 'request'" class="h-100" />
+                <ResponsePane v-if="selectionStore.activePaneTab === 'response'" class="h-100" />
             </div>
         </template>
         <!-- Vertical / Horizontal layout: show both panes with resizer -->
@@ -101,12 +99,19 @@ function onPaneResize(ratio: number) {
     padding: 0 6px;
     font-size: 11px;
     border: 1px solid transparent;
-    color: var(--hh-text, #212529) !important;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--hh-text, #212529);
+    cursor: pointer;
+}
+
+.pane-tab-btn:hover {
+    background: var(--hh-bg-tertiary, #e9ecef);
 }
 
 .pane-tab-btn.tab-active {
     border: 1px solid var(--hh-primary, #0d6efd);
-    color: var(--hh-primary, #0d6efd) !important;
+    color: var(--hh-primary, #0d6efd);
     background: rgba(13, 110, 253, 0.1);
 }
 </style>
