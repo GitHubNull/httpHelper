@@ -1,8 +1,14 @@
 {
   "manifest_version": 3,
   "name": "http helper",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "在 Chrome DevTools 中捕获并展示 HTTP 请求与响应的原生报文",
   "permissions": ["storage"],
+  "icons": {
+    "16": "src/icons/icon16.png",
+    "32": "src/icons/icon32.png",
+    "48": "src/icons/icon48.png",
+    "128": "src/icons/icon128.png"
+  },
   "devtools_page": "src/devtools.html"
 }
