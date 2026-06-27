@@ -10,6 +10,9 @@
 <body class="d-flex flex-column vh-100 overflow-hidden">
   <!-- Toolbar -->
   <div class="toolbar d-flex align-items-center px-2 gap-1 border-bottom flex-shrink-0">
+    <button id="record-toggle" class="btn btn-sm py-0 px-2 btn-recording active" title="Pause/Resume recording">
+      <span class="rec-dot"></span> Rec
+    </button>
     <button id="clear" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Clear all captured requests">Clear</button>
     <span id="count" class="small text-muted">0 requests</span>
   </div>
@@ -33,24 +36,69 @@
       <div class="d-flex flex-row h-100">
         <!-- Request Table Area (Left) -->
         <div class="d-flex flex-column overflow-hidden" id="request-table-area" style="flex:0 0 40%;min-width:200px;max-width:70%">
-          <div class="d-flex align-items-center px-2 py-0 border-bottom flex-shrink-0" style="height:24px">
-            <div class="form-check form-check-inline mb-0">
-              <input class="form-check-input" type="checkbox" id="filter-css-img" style="width:14px;height:14px">
-              <label class="form-check-label small" for="filter-css-img">Hide CSS/Image/Font</label>
+          <div class="filter-bar d-flex align-items-center px-1 border-bottom flex-shrink-0 gap-1" style="height:24px">
+            <select id="filter-method" class="form-select form-select-sm filter-select" title="Filter by method">
+              <option value="">All Methods</option>
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+              <option value="PATCH">PATCH</option>
+              <option value="OPTIONS">OPTIONS</option>
+              <option value="HEAD">HEAD</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1 search-opt-btn" id="filter-advanced-toggle" title="Show advanced filters">Advanced</button>
+            <div class="filter-search-wrapper position-relative flex-grow-1">
+              <input type="text" id="filter-search" class="form-control form-control-sm filter-search-input" placeholder="Filter (search URL, host, method...)">
             </div>
-            <button class="btn btn-sm btn-outline-secondary py-0 px-1 ms-auto" id="col-config-btn" title="Configure visible columns" style="font-size:10px">Columns</button>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1 ms-auto" id="col-config-btn" title="Configure columns" style="font-size:10px">Columns</button>
+          </div>
+          <div class="filter-bar-advanced d-none align-items-center px-1 border-bottom flex-shrink-0 gap-1" id="filter-advanced-row" style="height:24px">
+            <select id="filter-type" class="form-select form-select-sm filter-select" title="Filter by content type">
+              <option value="">All Types</option>
+              <option value="json">JSON</option>
+              <option value="xml">XML</option>
+              <option value="html">HTML</option>
+              <option value="js">JS</option>
+              <option value="css">CSS</option>
+              <option value="image">Image</option>
+              <option value="font">Font</option>
+              <option value="binary">Binary</option>
+              <option value="text">Text</option>
+              <option value="other">Other</option>
+            </select>
+            <select id="filter-color" class="form-select form-select-sm filter-select" title="Filter by color tag">
+              <option value="">All Tags</option>
+              <option value="red">Red</option>
+              <option value="orange">Orange</option>
+              <option value="yellow">Yellow</option>
+              <option value="green">Green</option>
+              <option value="blue">Blue</option>
+              <option value="purple">Purple</option>
+              <option value="pink">Pink</option>
+              <option value="gray">Gray</option>
+              <option value="none">No Tag</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-regex" title="Toggle regex">.*</button>
+            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-case" title="Toggle case sensitive">Aa</button>
+            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-not" title="Invert filter (NOT)">NOT</button>
           </div>
           <div class="flex-grow-1 overflow-auto" id="request-table-scroll">
             <table id="request-table" class="table table-sm table-striped table-hover mb-0 small" style="table-layout:auto;white-space:nowrap">
               <thead class="table-light sticky-top">
                 <tr>
                   <th data-col="index" data-mandatory="true" style="width:32px">#</th>
-                  <th data-col="method" data-mandatory="true" style="width:60px">Method</th>
-                  <th data-col="host">Host</th>
-                  <th data-col="url" data-mandatory="true">Path</th>
-                  <th data-col="status" style="width:60px">Status</th>
-                  <th data-col="length" style="width:50px">Length</th>
-                  <th data-col="time" style="width:70px">Time</th>
+                  <th data-col="color" style="width:28px">Tag</th>
+                  <th data-col="method" data-mandatory="true" data-sortable="true" style="width:60px">Method <span class="sort-indicator"></span></th>
+                  <th data-col="host" data-sortable="true">Host <span class="sort-indicator"></span></th>
+                  <th data-col="url" data-mandatory="true" data-sortable="true">Path <span class="sort-indicator"></span></th>
+                  <th data-col="status" data-sortable="true" style="width:60px">Status <span class="sort-indicator"></span></th>
+                  <th data-col="type" data-sortable="true" style="width:60px">Type <span class="sort-indicator"></span></th>
+                  <th data-col="length" data-sortable="true" style="width:50px">Length <span class="sort-indicator"></span></th>
+                  <th data-col="reqtime" data-sortable="true" style="width:140px">Req Time <span class="sort-indicator"></span></th>
+                  <th data-col="restime" data-sortable="true" style="width:140px">Res Time <span class="sort-indicator"></span></th>
+                  <th data-col="time" data-sortable="true" style="width:70px">Duration <span class="sort-indicator"></span></th>
+                  <th data-col="note" data-sortable="true" style="width:120px">Note <span class="sort-indicator"></span></th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -353,6 +401,25 @@
         <div class="modal-footer py-1 px-2">
           <button class="btn btn-sm btn-secondary py-0" data-bs-dismiss="modal">Cancel</button>
           <button class="btn btn-sm btn-primary py-0" id="save-scheme-btn">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Note Editor Modal -->
+  <div class="modal fade" id="noteEditorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header py-1 px-2">
+          <h6 class="modal-title small fw-bold">Edit Note</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-2">
+          <textarea class="form-control form-control-sm" id="edit-note-text" rows="3" placeholder="Add a note for this request..."></textarea>
+        </div>
+        <div class="modal-footer py-1 px-2">
+          <button class="btn btn-sm btn-secondary py-0" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-sm btn-primary py-0" id="save-note-btn">Save</button>
         </div>
       </div>
     </div>

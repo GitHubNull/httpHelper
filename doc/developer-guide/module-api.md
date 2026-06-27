@@ -28,7 +28,60 @@
 
 #### `clearRequests()`
 
-清空所有请求。
+清空所有请求及关联元数据。
+
+#### `getRequestByUid(uid)`
+
+通过唯一标识获取请求。
+
+- **参数**：`uid` — 请求唯一标识
+- **返回**：`Request | null`
+
+#### `getRequestCount()`
+
+获取已捕获请求总数。
+
+- **返回**：`number`
+
+#### `setRecording(enabled)`
+
+开启/关闭请求录制。
+
+- **参数**：`enabled` — `true` 开始录制，`false` 暂停录制
+- **说明**：暂停后新请求不会被捕获，已有请求保留在列表中
+
+#### `getRecording()`
+
+获取当前录制状态。
+
+- **返回**：`boolean` — 是否正在录制
+
+#### `getRequestMeta(uid)`
+
+获取请求的元数据（颜色标记和备注）。
+
+- **参数**：`uid` — 请求唯一标识
+- **返回**：`{ color: string|null, note: string }` — 元数据对象
+
+#### `setRequestColor(uid, color)`
+
+设置请求的颜色标记。
+
+- **参数**：
+  - `uid` — 请求唯一标识
+  - `color` — 颜色名称（`'red'|'orange'|'yellow'|'green'|'blue'|'purple'|'pink'|'gray'`）或 `null` 清除
+
+#### `setRequestNote(uid, note)`
+
+设置请求的备注文本。
+
+- **参数**：
+  - `uid` — 请求唯一标识
+  - `note` — 备注文本
+
+#### `clearMeta()`
+
+清空所有请求元数据并重置 uid 计数器。
 
 ---
 
@@ -91,14 +144,23 @@
 
 ### 类：`UiRenderer`
 
-#### `renderRequestList(requests, selectedIndex, onSelect)`
+#### `renderRequestTable(requests, selectedIndex, onSelect, sortState, totalRequests)`
 
-渲染请求列表。
+渲染请求列表为表格（列键驱动模式）。
 
 - **参数**：
-  - `requests` — 请求数组
-  - `selectedIndex` — 当前选中索引
-  - `onSelect(index)` — 点击回调
+  - `requests` — 已过滤并排序后的请求数组
+  - `selectedIndex` — 当前选中索引（在显示数组中的位置）
+  - `onSelect(index)` — 点击行回调
+  - `sortState` — 排序状态 `{ column: string|null, direction: 'asc'|'desc' }`
+  - `totalRequests` — 请求总数（用于显示 `filtered/total` 计数）
+- **说明**：从 thead 读取列顺序（`data-col` 属性）按序构建单元格，支持列隐藏、排序指示符、颜色标记和备注渲染
+
+#### `setMetaMap(metaMap)`
+
+设置元数据 Map 引用，用于在渲染时读取请求的颜色标记和备注。
+
+- **参数**：`metaMap` — `Map<uid, { color, note }>` 引用
 
 #### `switchTab(pane, tabName)`
 
@@ -350,3 +412,18 @@ HTML 实体转义。
 根据 Content-Type 检测内容类型。
 
 - **返回**：`'json' | 'xml' | 'binary' | 'text'`
+
+#### `formatTimestamp(date)`
+
+格式化时间戳为本地时间字符串。
+
+- **参数**：`date` — `Date` 对象或 ISO 字符串或时间戳
+- **返回**：`string` — 格式 `"YYYY-MM-DD HH:mm:ss.SSS"`（毫秒精度）
+
+#### `getResourceCategory(request)`
+
+获取请求的资源分类（比 `detectContentType` 更细粒度）。
+
+- **参数**：`request` — Chrome DevTools HAR Entry
+- **返回**：`'json' | 'xml' | 'html' | 'js' | 'css' | 'image' | 'font' | 'binary' | 'text' | 'other'`
+- **说明**：优先使用响应 Content-Type 头部分类，fallback 到 `_resourceType` 字段

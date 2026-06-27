@@ -318,6 +318,162 @@ mark.search-highlight { background: #ffeb3b; color: #000; border-radius: 2px; }
   border-color: var(--bs-primary);
 }
 
+/* === Recording Button === */
+.btn-recording {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--bs-border-color);
+}
+.btn-recording .rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #6c757d;
+}
+.btn-recording.active {
+  background: rgba(220, 53, 69, 0.1);
+  border-color: #dc3545;
+  color: #dc3545;
+}
+.btn-recording.active .rec-dot {
+  background: #dc3545;
+  animation: rec-pulse 1.5s infinite;
+}
+.btn-recording:not(.active) {
+  color: var(--bs-secondary);
+}
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* === Filter Bar === */
+.filter-bar,
+.filter-bar-advanced {
+  font-size: 11px;
+  background: var(--bs-body-bg);
+}
+.filter-select {
+  width: auto !important;
+  height: 20px;
+  font-size: 10px;
+  padding: 0 18px 0 4px !important;
+  line-height: 1;
+}
+.filter-search-input {
+  height: 20px;
+  font-size: 11px;
+  padding: 0 6px !important;
+}
+.filter-bar .search-opt-btn,
+.filter-bar-advanced .search-opt-btn {
+  font-size: 10px;
+  padding: 1px 4px !important;
+  line-height: 1;
+  border-color: var(--bs-border-color);
+}
+.filter-bar .search-opt-btn.active,
+.filter-bar-advanced .search-opt-btn.active {
+  background: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: #fff;
+}
+
+/* === Color Tag === */
+.color-tag {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  cursor: pointer;
+  border: 1px solid var(--bs-border-color);
+  vertical-align: middle;
+}
+.color-tag.color-red { background: #dc3545; }
+.color-tag.color-orange { background: #fd7e14; }
+.color-tag.color-yellow { background: #ffc107; }
+.color-tag.color-green { background: #198754; }
+.color-tag.color-blue { background: #0d6efd; }
+.color-tag.color-purple { background: #6f42c1; }
+.color-tag.color-pink { background: #d63384; }
+.color-tag.color-gray { background: #6c757d; }
+
+/* === Color Picker Dropdown === */
+.color-picker-dropdown {
+  position: absolute;
+  z-index: 1050;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+}
+.color-picker-dropdown .swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--bs-border-color);
+  display: inline-block;
+}
+.color-picker-dropdown .swatch:hover {
+  transform: scale(1.15);
+}
+.color-picker-dropdown .swatch-clear {
+  background: var(--bs-body-bg) !important;
+  color: var(--bs-danger);
+  font-size: 14px;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* === Note Cell === */
+.note-cell {
+  cursor: pointer;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+.note-cell.note-empty {
+  color: var(--bs-secondary);
+  opacity: 0.4;
+  font-size: 14px;
+}
+.note-cell.note-empty:hover {
+  opacity: 0.8;
+}
+
+/* === Sort Indicator === */
+#request-table th[data-sortable="true"] {
+  cursor: pointer;
+  user-select: none;
+}
+#request-table th[data-sortable="true"]:hover {
+  background: var(--bs-tertiary-bg);
+}
+.sort-indicator {
+  font-size: 9px;
+  opacity: 0.3;
+  margin-left: 2px;
+  display: inline-block;
+}
+th.sort-asc .sort-indicator::after {
+  content: '\25B2';
+  opacity: 1;
+  color: var(--bs-primary);
+}
+th.sort-desc .sort-indicator::after {
+  content: '\25BC';
+  opacity: 1;
+  color: var(--bs-primary);
+}
+
 /* === Dark Theme Overrides === */
 @media (prefers-color-scheme: dark) {
   .table-light th { background: var(--bs-dark) !important; color: var(--bs-light); }

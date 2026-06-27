@@ -8,6 +8,7 @@ import SessionStorage from './modules/session-storage.js';
 import TableManager from './modules/table-manager.js';
 import ClipboardUtils from './utils/clipboard-utils.js';
 import DomUtils from './utils/dom-utils.js';
+import StringUtils from './utils/string-utils.js';
 
 (function () {
   'use strict';
@@ -20,6 +21,15 @@ import DomUtils from './utils/dom-utils.js';
   let activeScheme = null;
   let editingFieldId = null;
   let editingSchemeId = null;
+
+  // === Filter / Sort / Display State ===
+  let displayedRequests = [];
+  let editingNoteUid = null;
+  const sortState = { column: null, direction: 'asc' };
+  const filterState = {
+    method: '', type: '', color: '', keyword: '',
+    useRegex: false, caseSensitive: false, invert: false
+  };
 
   // Per-pane search state
   const paneSearchState = {
@@ -34,8 +44,9 @@ import DomUtils from './utils/dom-utils.js';
   const $hexRes = $('#hex-response');
 
   // === Init ===
+  UiRenderer.setMetaMap(NetworkHandler.requestMeta);
   NetworkHandler.initNetworkListener((request) => {
-    UiRenderer.renderRequestTable(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+    refreshTable();
     checkSessionExtraction(request);
   });
 
@@ -92,13 +103,13 @@ import DomUtils from './utils/dom-utils.js';
     ClipboardUtils.copyText(text, 'Response copied!');
   });
   $('#download-req').on('click', () => {
-    const req = NetworkHandler.getRequest(selectedIndex);
+    const req = currentRequest;
     const text = getPaneText('request', UiRenderer.getActiveTab('request'));
     const name = req ? 'request_' + (req.request.method || 'HTTP') + '.txt' : 'request.txt';
     ClipboardUtils.downloadText(text, name);
   });
   $('#download-res').on('click', () => {
-    const req = NetworkHandler.getRequest(selectedIndex);
+    const req = currentRequest;
     const text = getPaneText('response', UiRenderer.getActiveTab('response'));
     const name = req ? 'response_' + (req.response ? req.response.status : 'HTTP') + '.txt' : 'response.txt';
     ClipboardUtils.downloadText(text, name);
@@ -132,13 +143,14 @@ import DomUtils from './utils/dom-utils.js';
     selectedIndex = -1;
     currentRequest = null;
     currentResponseBody = '';
+    displayedRequests = [];
     $reqText.val('');
     $resText.val('');
     $hexReq.text('');
     $hexRes.text('');
     $('#pretty-request').text('');
     $('#pretty-response').text('');
-    UiRenderer.renderRequestTable(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+    refreshTable();
   });
 
   // === Session Config Tab Events ===
@@ -287,6 +299,13 @@ import DomUtils from './utils/dom-utils.js';
   // Column visibility config
   initColumnConfig();
 
+  // === HTTP History Feature Init ===
+  initRecording();
+  initFilters();
+  initSorting();
+  initColorPicker();
+  initNoteEditor();
+
   // Session table search filters
   $('#fields-search-input').on('input', DomUtils.debounce(() => renderFieldsTable(), 300));
   $('#schemes-search-input').on('input', DomUtils.debounce(() => renderSchemesTable(), 300));
@@ -325,12 +344,12 @@ import DomUtils from './utils/dom-utils.js';
   // === Core Functions ===
   function selectRequest(index) {
     selectedIndex = index;
-    const request = NetworkHandler.getRequest(index);
+    const request = displayedRequests[index];
     currentRequest = request;
 
     clearPaneHighlights('req');
     clearPaneHighlights('res');
-    UiRenderer.renderRequestTable(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+    refreshTable();
 
     if (!request) return;
 
@@ -832,11 +851,256 @@ import DomUtils from './utils/dom-utils.js';
     });
   }
 
+  // === HTTP History: Filter / Sort / Refresh ===
+  function refreshTable() {
+    displayedRequests = getFilteredRequests();
+    displayedRequests = getSortedRequests(displayedRequests);
+    // Re-find selected index by uid
+    if (currentRequest && currentRequest._uid) {
+      selectedIndex = displayedRequests.findIndex(r => r._uid === currentRequest._uid);
+    } else {
+      selectedIndex = -1;
+    }
+    UiRenderer.renderRequestTable(displayedRequests, selectedIndex, selectRequest, sortState, NetworkHandler.getRequestCount());
+  }
+
+  function getFilteredRequests() {
+    const all = NetworkHandler.getRequests();
+    let result = all.slice();
+    const hasFilter = filterState.method || filterState.type || filterState.color || filterState.keyword;
+    if (!hasFilter && !filterState.invert) return result;
+
+    if (filterState.method) {
+      result = result.filter(r => r.request.method === filterState.method);
+    }
+    if (filterState.type) {
+      result = result.filter(r => StringUtils.getResourceCategory(r) === filterState.type);
+    }
+    if (filterState.color === 'none') {
+      result = result.filter(r => !NetworkHandler.getRequestMeta(r._uid).color);
+    } else if (filterState.color) {
+      result = result.filter(r => NetworkHandler.getRequestMeta(r._uid).color === filterState.color);
+    }
+    if (filterState.keyword) {
+      const kw = filterState.keyword;
+      const flags = filterState.caseSensitive ? '' : 'i';
+      result = result.filter(r => {
+        const text = r.request.url + ' ' + r.request.method;
+        if (filterState.useRegex) {
+          try { return new RegExp(kw, flags).test(text); } catch { return false; }
+        }
+        return filterState.caseSensitive ? text.includes(kw) : text.toLowerCase().includes(kw.toLowerCase());
+      });
+    }
+    if (filterState.invert) {
+      const filteredSet = new Set(result);
+      result = all.filter(r => !filteredSet.has(r));
+    }
+    return result;
+  }
+
+  function getSortedRequests(requests) {
+    if (!sortState.column) return requests;
+    const col = sortState.column;
+    const dir = sortState.direction === 'asc' ? 1 : -1;
+    return requests.slice().sort((a, b) => {
+      let va, vb;
+      switch (col) {
+        case 'index':
+          va = a._uid || 0; vb = b._uid || 0; break;
+        case 'color':
+          va = NetworkHandler.getRequestMeta(a._uid).color || '';
+          vb = NetworkHandler.getRequestMeta(b._uid).color || '';
+          break;
+        case 'method':
+          va = a.request.method || ''; vb = b.request.method || ''; break;
+        case 'host':
+          try { va = new URL(a.request.url).hostname; } catch { va = ''; }
+          try { vb = new URL(b.request.url).hostname; } catch { vb = ''; }
+          break;
+        case 'url':
+          try { const u = new URL(a.request.url); va = u.pathname + u.search; } catch { va = a.request.url; }
+          try { const u = new URL(b.request.url); vb = u.pathname + u.search; } catch { vb = b.request.url; }
+          break;
+        case 'status':
+          va = a.response ? a.response.status : 0;
+          vb = b.response ? b.response.status : 0;
+          break;
+        case 'type':
+          va = StringUtils.getResourceCategory(a);
+          vb = StringUtils.getResourceCategory(b);
+          break;
+        case 'length':
+          va = (a.response && a.response.content) ? a.response.content.size : 0;
+          vb = (b.response && b.response.content) ? b.response.content.size : 0;
+          break;
+        case 'reqtime':
+          va = a._reqStartTime ? new Date(a._reqStartTime).getTime() : 0;
+          vb = b._reqStartTime ? new Date(b._reqStartTime).getTime() : 0;
+          break;
+        case 'restime':
+          va = a._resEndTime ? new Date(a._resEndTime).getTime() : 0;
+          vb = b._resEndTime ? new Date(b._resEndTime).getTime() : 0;
+          break;
+        case 'time':
+          va = a.time || 0; vb = b.time || 0; break;
+        case 'note':
+          va = NetworkHandler.getRequestMeta(a._uid).note || '';
+          vb = NetworkHandler.getRequestMeta(b._uid).note || '';
+          break;
+        default: return 0;
+      }
+      if (typeof va === 'string' && typeof vb === 'string') {
+        return dir * va.localeCompare(vb);
+      }
+      return dir * (va < vb ? -1 : va > vb ? 1 : 0);
+    });
+  }
+
+  // === Recording Toggle ===
+  function initRecording() {
+    $('#record-toggle').on('click', function () {
+      const active = $(this).hasClass('active');
+      if (active) {
+        NetworkHandler.setRecording(false);
+        $(this).removeClass('active').attr('title', 'Resume recording');
+        ClipboardUtils.showToast('Recording paused');
+      } else {
+        NetworkHandler.setRecording(true);
+        $(this).addClass('active').attr('title', 'Pause recording');
+        ClipboardUtils.showToast('Recording resumed');
+      }
+    });
+  }
+
+  // === Filter Controls ===
+  function initFilters() {
+    // Advanced filter toggle - expand/collapse advanced filter row
+    $('#filter-advanced-toggle').on('click', function () {
+      const $row = $('#filter-advanced-row');
+      const isHidden = $row.hasClass('d-none');
+      if (isHidden) {
+        $row.removeClass('d-none').addClass('d-flex');
+        $(this).addClass('active').attr('title', 'Hide advanced filters');
+      } else {
+        $row.removeClass('d-flex').addClass('d-none');
+        $(this).removeClass('active').attr('title', 'Show advanced filters');
+      }
+    });
+    $('#filter-method').on('change', function () { filterState.method = $(this).val(); refreshTable(); });
+    $('#filter-type').on('change', function () { filterState.type = $(this).val(); refreshTable(); });
+    $('#filter-color').on('change', function () { filterState.color = $(this).val(); refreshTable(); });
+    $('#filter-search').on('input', DomUtils.debounce(function () {
+      filterState.keyword = $(this).val() || '';
+      refreshTable();
+    }, 300));
+    $('#filter-regex').on('click', function () {
+      $(this).toggleClass('active');
+      filterState.useRegex = $(this).hasClass('active');
+      refreshTable();
+    });
+    $('#filter-case').on('click', function () {
+      $(this).toggleClass('active');
+      filterState.caseSensitive = $(this).hasClass('active');
+      refreshTable();
+    });
+    $('#filter-not').on('click', function () {
+      $(this).toggleClass('active');
+      filterState.invert = $(this).hasClass('active');
+      refreshTable();
+    });
+  }
+
+  // === Column Sorting ===
+  function initSorting() {
+    $('#request-table').on('click', 'thead th[data-sortable="true"]', function () {
+      const col = $(this).attr('data-col');
+      if (sortState.column === col) {
+        if (sortState.direction === 'asc') {
+          sortState.direction = 'desc';
+        } else {
+          sortState.column = null;
+          sortState.direction = 'asc';
+        }
+      } else {
+        sortState.column = col;
+        sortState.direction = 'asc';
+      }
+      refreshTable();
+    });
+  }
+
+  // === Color Picker ===
+  function initColorPicker() {
+    const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'gray'];
+    const colorMap = {
+      red: '#dc3545', orange: '#fd7e14', yellow: '#ffc107', green: '#198754',
+      blue: '#0d6efd', purple: '#6f42c1', pink: '#d63384', gray: '#6c757d'
+    };
+    let $dropdown = null;
+
+    $('#request-table').on('click', '.color-tag', function (e) {
+      e.stopPropagation();
+      const uidStr = $(this).attr('data-uid');
+      if (!uidStr) return;
+      const uid = parseInt(uidStr, 10);
+
+      if ($dropdown) { $dropdown.remove(); $dropdown = null; return; }
+
+      $dropdown = $('<div class="color-picker-dropdown"></div>');
+      colors.forEach(c => {
+        $dropdown.append(`<span class="swatch" style="background:${colorMap[c]}" data-color="${c}" title="${c}"></span>`);
+      });
+      $dropdown.append('<span class="swatch swatch-clear" data-color="" title="Clear tag">&times;</span>');
+
+      const offset = $(this).offset();
+      $dropdown.css({
+        top: (offset.top + 18) + 'px',
+        left: offset.left + 'px'
+      });
+      $('body').append($dropdown);
+
+      $dropdown.on('click', '.swatch', function (e) {
+        e.stopPropagation();
+        const color = $(this).attr('data-color');
+        NetworkHandler.setRequestColor(uid, color || null);
+        $dropdown.remove(); $dropdown = null;
+        refreshTable();
+      });
+    });
+
+    $(document).on('click', function () {
+      if ($dropdown) { $dropdown.remove(); $dropdown = null; }
+    });
+  }
+
+  // === Note Editor ===
+  function initNoteEditor() {
+    $('#request-table').on('click', '.note-cell', function (e) {
+      e.stopPropagation();
+      const uidStr = $(this).attr('data-uid');
+      if (!uidStr) return;
+      editingNoteUid = parseInt(uidStr, 10);
+      const meta = NetworkHandler.getRequestMeta(editingNoteUid);
+      $('#edit-note-text').val(meta.note || '');
+      new bootstrap.Modal($('#noteEditorModal')[0]).show();
+    });
+
+    $('#save-note-btn').on('click', function () {
+      if (editingNoteUid === null) return;
+      const text = $('#edit-note-text').val() || '';
+      NetworkHandler.setRequestNote(editingNoteUid, text);
+      editingNoteUid = null;
+      bootstrap.Modal.getInstance($('#noteEditorModal')[0]).hide();
+      refreshTable();
+    });
+  }
+
   // === Utility ===
   function escapeHtml(text) {
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   // === Initial Render ===
-  UiRenderer.renderRequestTable(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+  refreshTable();
 })();

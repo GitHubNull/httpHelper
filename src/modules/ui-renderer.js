@@ -10,62 +10,142 @@ const UiRenderer = {
   /**
    * 渲染请求列表为表格
    */
-  renderRequestTable(requests, selectedIndex, onSelect) {
+  renderRequestTable(requests, selectedIndex, onSelect, sortState, totalRequests) {
     const $tbody = $('#request-table tbody');
     const $count = $('#count');
+    const $ths = $('#request-table thead th');
+
+    // Update count display (filtered / total)
     if ($count.length) {
-      $count.text(requests.length + ' request' + (requests.length !== 1 ? 's' : ''));
+      const total = totalRequests !== undefined ? totalRequests : requests.length;
+      const filtered = requests.length;
+      if (total !== filtered) {
+        $count.text(filtered + '/' + total + ' requests');
+      } else {
+        $count.text(filtered + ' request' + (filtered !== 1 ? 's' : ''));
+      }
     }
-  
+
+    // Clear sort indicators
+    $ths.removeClass('sort-asc sort-desc');
+    if (sortState && sortState.column) {
+      $ths.filter(`[data-col="${sortState.column}"]`).addClass(sortState.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+
     $tbody.empty();
     if (requests.length === 0) {
-      $tbody.append('<tr><td colspan="7" class="text-center text-muted py-3">No requests captured yet.<br>Reload the page or trigger network activity.</td></tr>');
+      const colCount = $ths.length;
+      $tbody.append(`<tr><td colspan="${colCount}" class="text-center text-muted py-3">No requests captured yet.<br>Reload the page or trigger network activity.</td></tr>`);
       return;
     }
-  
-    // Get hidden column indices
-    const $ths = $('#request-table thead th');
-    const hiddenIndices = new Set();
-    $ths.each(function (i) {
-      if ($(this).hasClass('d-none')) hiddenIndices.add(i);
+
+    // Read column order and hidden state from thead (column-key driven)
+    const colKeys = [];
+    const hiddenCols = new Set();
+    $ths.each(function () {
+      const key = $(this).attr('data-col');
+      colKeys.push(key);
+      if ($(this).hasClass('d-none')) hiddenCols.add(key);
     });
-  
+
+    const esc = StringUtils.escapeHtml;
+
     requests.forEach((req, index) => {
-      const status = req.response ? req.response.status : 0;
-      let badgeClass = 'bg-success';
-      if (status >= 400) badgeClass = 'bg-danger';
-      else if (status >= 300) badgeClass = 'bg-warning text-dark';
-      else if (status === 0) badgeClass = 'bg-secondary';
-  
-      let host = '', urlPath = '';
-      try {
-        const u = new URL(req.request.url);
-        host = u.hostname;
-        urlPath = u.pathname + u.search;
-      } catch {
-        urlPath = req.request.url;
-      }
-  
-      const contentLength = req.response && req.response.content ? req.response.content.size : '';
-      const time = req.time ? Math.round(req.time) + 'ms' : '';
-  
-      const cells = [
-        `<td${hiddenIndices.has(0) ? ' class="d-none"' : ''}>${index + 1}</td>`,
-        `<td${hiddenIndices.has(1) ? ' class="d-none"' : ''}><strong>${StringUtils.escapeHtml(req.request.method)}</strong></td>`,
-        `<td${hiddenIndices.has(2) ? ' class="d-none"' : ''} title="${StringUtils.escapeHtml(host)}">${StringUtils.escapeHtml(host)}</td>`,
-        `<td${hiddenIndices.has(3) ? ' class="d-none"' : ''} title="${StringUtils.escapeHtml(req.request.url)}">${StringUtils.escapeHtml(urlPath)}</td>`,
-        `<td${hiddenIndices.has(4) ? ' class="d-none"' : ''}><span class="badge ${badgeClass}">${status}</span></td>`,
-        `<td${hiddenIndices.has(5) ? ' class="d-none"' : ''}>${contentLength}</td>`,
-        `<td${hiddenIndices.has(6) ? ' class="d-none"' : ''}>${time}</td>`
-      ];
-  
+      const cells = colKeys.map(key => {
+        const hidden = hiddenCols.has(key) ? ' class="d-none"' : '';
+        let html = '';
+
+        switch (key) {
+          case 'index':
+            html = index + 1;
+            break;
+          case 'color': {
+            const meta = req._uid ? this._getMeta(req._uid) : null;
+            const color = meta ? meta.color : null;
+            html = `<span class="color-tag${color ? ' color-' + color : ''}" data-uid="${req._uid || ''}"></span>`;
+            break;
+          }
+          case 'method':
+            html = `<strong>${esc(req.request.method)}</strong>`;
+            break;
+          case 'host': {
+            let host = '';
+            try { host = new URL(req.request.url).hostname; } catch { host = ''; }
+            html = `<span title="${esc(host)}">${esc(host)}</span>`;
+            break;
+          }
+          case 'url': {
+            let urlPath = '';
+            try { const u = new URL(req.request.url); urlPath = u.pathname + u.search; } catch { urlPath = req.request.url; }
+            html = `<span title="${esc(req.request.url)}">${esc(urlPath)}</span>`;
+            break;
+          }
+          case 'status': {
+            const status = req.response ? req.response.status : 0;
+            let badgeClass = 'bg-success';
+            if (status >= 400) badgeClass = 'bg-danger';
+            else if (status >= 300) badgeClass = 'bg-warning text-dark';
+            else if (status === 0) badgeClass = 'bg-secondary';
+            html = `<span class="badge ${badgeClass}">${status}</span>`;
+            break;
+          }
+          case 'type': {
+            const cat = StringUtils.getResourceCategory(req);
+            html = `<span class="badge bg-secondary">${esc(cat)}</span>`;
+            break;
+          }
+          case 'length': {
+            const contentLength = req.response && req.response.content ? req.response.content.size : '';
+            html = contentLength;
+            break;
+          }
+          case 'reqtime':
+            html = req._reqStartTime ? StringUtils.formatTimestamp(req._reqStartTime) : '';
+            break;
+          case 'restime':
+            html = req._resEndTime ? StringUtils.formatTimestamp(req._resEndTime) : '';
+            break;
+          case 'time':
+            html = req.time ? Math.round(req.time) + 'ms' : '';
+            break;
+          case 'note': {
+            const noteMeta = req._uid ? this._getMeta(req._uid) : null;
+            const note = noteMeta ? noteMeta.note : '';
+            if (note) {
+              html = `<span class="note-cell" title="${esc(note)}" data-uid="${req._uid || ''}">${esc(note)}</span>`;
+            } else {
+              html = `<span class="note-cell note-empty" data-uid="${req._uid || ''}">+</span>`;
+            }
+            break;
+          }
+          default:
+            html = '';
+        }
+        return `<td${hidden}>${html}</td>`;
+      });
+
       const $tr = $('<tr>')
         .toggleClass('table-active', index === selectedIndex)
         .css('cursor', 'pointer')
-        .on('click', () => onSelect(index))
+        .on('click', function (e) {
+          // Skip row selection when clicking color tag or note cell
+          if (e.target && $(e.target).closest('.color-tag, .note-cell').length) return;
+          onSelect(index);
+        })
         .html(cells.join(''));
       $tbody.append($tr);
     });
+  },
+
+  _metaMap: null,
+
+  setMetaMap(metaMap) {
+    this._metaMap = metaMap;
+  },
+
+  _getMeta(uid) {
+    if (!this._metaMap || !uid) return null;
+    return this._metaMap.get(uid) || null;
   },
 
   /**
