@@ -1,4 +1,4 @@
-# Raw HTTP Copier
+# http helper
 
 一款 Chrome 开发者工具扩展，用于捕获、查看、复制和下载 HTTP 请求与响应的原生报文。
 
