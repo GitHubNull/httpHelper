@@ -2,47 +2,178 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="third_lib/bootstrap.min.css">
   <link rel="stylesheet" href="panel.css">
 </head>
 <body>
   <div class="toolbar">
     <button id="clear">Clear All</button>
     <span id="count">0 requests</span>
+
+    <div class="layout-controls">
+      <button class="layout-btn" data-layout="vertical" title="Vertical Layout">&#8597;</button>
+      <button class="layout-btn" data-layout="horizontal" title="Horizontal Layout">&#8596;</button>
+      <button class="layout-btn" data-layout="tabs" title="Tab Layout">&#9776;</button>
+    </div>
+
+    <div class="search-controls">
+      <input type="text" id="search-input" placeholder="Search..." class="form-control form-control-sm">
+      <label class="form-check-label"><input type="checkbox" id="search-regex" class="form-check-input"> Regex</label>
+      <label class="form-check-label"><input type="checkbox" id="search-case" class="form-check-input"> Case</label>
+      <span id="search-count">0/0</span>
+      <button id="search-prev" class="btn btn-sm btn-outline-secondary">&#9664;</button>
+      <button id="search-next" class="btn btn-sm btn-outline-secondary">&#9654;</button>
+    </div>
+
+    <button id="session-btn" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#sessionModal">Session</button>
   </div>
+
   <div class="container">
     <div class="sidebar">
       <div id="request-list"></div>
     </div>
-    <div class="content">
-      <div class="pane">
+    <div class="content layout-vertical">
+      <div class="pane" id="request-pane">
         <div class="pane-header">
-          <span>Raw Request</span>
+          <div class="tab-nav">
+            <button class="tab-btn active" data-tab="raw" data-pane="request">Raw</button>
+            <button class="tab-btn" data-tab="pretty" data-pane="request">Pretty</button>
+            <button class="tab-btn" data-tab="hex" data-pane="request">Hex</button>
+          </div>
           <div class="pane-actions">
             <button id="copy-req">Copy</button>
             <button id="download-req">Download</button>
           </div>
         </div>
-        <div class="code-view" id="raw-request-view">
-          <div class="line-numbers" id="req-line-numbers"></div>
-          <textarea id="raw-request" readonly placeholder="Select a request from the left panel..."></textarea>
+        <div class="tab-content active" data-tab="raw">
+          <div class="code-view">
+            <div class="line-numbers" id="req-line-numbers-raw"></div>
+            <textarea id="raw-request" readonly placeholder="Select a request from the left panel..."></textarea>
+          </div>
+        </div>
+        <div class="tab-content" data-tab="pretty">
+          <div class="code-view">
+            <div class="line-numbers" id="req-line-numbers-pretty"></div>
+            <textarea id="pretty-request" readonly placeholder="Select a request from the left panel..."></textarea>
+          </div>
+        </div>
+        <div class="tab-content" data-tab="hex">
+          <div class="hex-view">
+            <div class="hex-display" id="hex-request"></div>
+          </div>
         </div>
       </div>
-      <div class="pane">
+      <div class="pane" id="response-pane">
         <div class="pane-header">
-          <span>Raw Response</span>
+          <div class="tab-nav">
+            <button class="tab-btn active" data-tab="raw" data-pane="response">Raw</button>
+            <button class="tab-btn" data-tab="pretty" data-pane="response">Pretty</button>
+            <button class="tab-btn" data-tab="hex" data-pane="response">Hex</button>
+          </div>
           <div class="pane-actions">
             <button id="copy-res">Copy</button>
             <button id="download-res">Download</button>
           </div>
         </div>
-        <div class="code-view" id="raw-response-view">
-          <div class="line-numbers" id="res-line-numbers"></div>
-          <textarea id="raw-response" readonly placeholder="Select a request from the left panel..."></textarea>
+        <div class="tab-content active" data-tab="raw">
+          <div class="code-view">
+            <div class="line-numbers" id="res-line-numbers-raw"></div>
+            <textarea id="raw-response" readonly placeholder="Select a request from the left panel..."></textarea>
+          </div>
+        </div>
+        <div class="tab-content" data-tab="pretty">
+          <div class="code-view">
+            <div class="line-numbers" id="res-line-numbers-pretty"></div>
+            <textarea id="pretty-response" readonly placeholder="Select a request from the left panel..."></textarea>
+          </div>
+        </div>
+        <div class="tab-content" data-tab="hex">
+          <div class="hex-view">
+            <div class="hex-display" id="hex-response"></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
   <div id="toast"></div>
-  <script src="panel.js"></script>
+
+  <!-- Session Modal -->
+  <div class="modal fade" id="sessionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Session Extractor</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <button id="new-scheme-btn" class="btn btn-sm btn-success">New Scheme</button>
+            <button id="copy-session-btn" class="btn btn-sm btn-info">Copy Session</button>
+          </div>
+          <div id="scheme-list" class="list-group mb-3"></div>
+          <div id="scheme-editor" style="display:none;">
+            <h6>Scheme Editor</h6>
+            <div class="mb-2">
+              <label class="form-label">Name</label>
+              <input type="text" id="scheme-name" class="form-control form-control-sm">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Target Domains (comma separated)</label>
+              <input type="text" id="scheme-domains" class="form-control form-control-sm">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Domain Regex</label>
+              <input type="text" id="scheme-regex" class="form-control form-control-sm">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Description</label>
+              <input type="text" id="scheme-desc" class="form-control form-control-sm">
+            </div>
+            <div class="mb-2">
+              <button id="save-scheme-btn" class="btn btn-sm btn-primary">Save Scheme</button>
+              <button id="cancel-scheme-btn" class="btn btn-sm btn-secondary">Cancel</button>
+            </div>
+            <hr>
+            <h6>Fields</h6>
+            <div id="field-list" class="list-group mb-2"></div>
+            <div class="row g-2">
+              <div class="col-md-3">
+                <input type="text" id="field-name" class="form-control form-control-sm" placeholder="Field Name">
+              </div>
+              <div class="col-md-3">
+                <select id="field-location" class="form-select form-select-sm">
+                  <option value="header">Header</option>
+                  <option value="body">Body</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <input type="text" id="field-location-name" class="form-control form-control-sm" placeholder="Header Name / Body">
+              </div>
+              <div class="col-md-3">
+                <select id="field-mode" class="form-select form-select-sm">
+                  <option value="substring">Substring</option>
+                  <option value="regex">Regex</option>
+                  <option value="keyword">Keyword</option>
+                  <option value="xpath">XPath</option>
+                  <option value="jsonpath">JSONPath</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <input type="text" id="field-pattern" class="form-control form-control-sm" placeholder="Pattern / Expression">
+              </div>
+              <div class="col-md-6">
+                <button id="add-field-btn" class="btn btn-sm btn-success">Add Field</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="third_lib/jquery.min.js"></script>
+  <script src="third_lib/bootstrap.bundle.min.js"></script>
+  <script type="module" src="panel.js"></script>
 </body>
 </html>

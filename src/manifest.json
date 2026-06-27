@@ -1,8 +1,0 @@
-{
-  "manifest_version": 3,
-  "name": "Raw HTTP Copier",
-  "version": "0.1.0",
-  "description": "Copy raw HTTP request/response messages from Chrome DevTools Network panel",
-  "permissions": [],
-  "devtools_page": "devtools.html"
-}

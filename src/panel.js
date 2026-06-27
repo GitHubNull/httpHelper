@@ -1,233 +1,430 @@
+import NetworkHandler from './modules/network-handler.js';
+import ContentFormatter from './modules/content-formatter.js';
+import UiRenderer from './modules/ui-renderer.js';
+import LayoutManager from './modules/layout-manager.js';
+import SearchHighlighter from './modules/search-highlighter.js';
+import SessionExtractor from './modules/session-extractor.js';
+import SessionStorage from './modules/session-storage.js';
+import ClipboardUtils from './utils/clipboard-utils.js';
+import DomUtils from './utils/dom-utils.js';
+
 (function() {
   'use strict';
 
-  let requests = [];
-  const MAX_REQUESTS = 500;
   let selectedIndex = -1;
+  let currentRequest = null;
+  let currentResponseBody = '';
+  let schemes = [];
+  let activeScheme = null;
+  let editingSchemeId = null;
 
-  const listEl = document.getElementById('request-list');
+  // DOM refs
   const reqText = document.getElementById('raw-request');
+  const prettyReqText = document.getElementById('pretty-request');
   const resText = document.getElementById('raw-response');
-  const reqLineNumbers = document.getElementById('req-line-numbers');
-  const resLineNumbers = document.getElementById('res-line-numbers');
-  const countEl = document.getElementById('count');
-  const toastEl = document.getElementById('toast');
+  const prettyResText = document.getElementById('pretty-response');
+  const hexReq = document.getElementById('hex-request');
+  const hexRes = document.getElementById('hex-response');
 
-  // Listen for network requests
-  chrome.devtools.network.onRequestFinished.addListener((request) => {
-    requests.unshift(request);
-    if (requests.length > MAX_REQUESTS) {
-      requests.pop();
-    }
-    renderList();
+  // Init
+  NetworkHandler.initNetworkListener((request) => {
+    UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+    checkSessionExtraction(request);
   });
 
-  function renderList() {
-    listEl.innerHTML = '';
-    countEl.textContent = requests.length + ' request' + (requests.length !== 1 ? 's' : '');
+  loadSchemes();
 
-    if (requests.length === 0) {
-      listEl.innerHTML = '<div class="empty-state">No requests captured yet.<br>Reload the page or trigger network activity.</div>';
-      return;
-    }
+  // Layout
+  LayoutManager.initLayoutButtons(document.querySelector('.layout-controls'), (layout) => {
+    document.querySelector('.content').className = 'content layout-' + layout;
+  });
 
-    requests.forEach((req, index) => {
-      const item = document.createElement('div');
-      item.className = 'request-item' + (index === selectedIndex ? ' active' : '');
-      item.dataset.index = index;
+  // Search
+  SearchHighlighter.initSearch(document.querySelector('.search-controls'), (text, options) => {
+    performGlobalSearch(text, options);
+  });
 
-      const status = req.response ? req.response.status : 0;
-      let statusClass = 'success';
-      if (status >= 400) statusClass = 'error';
-      else if (status >= 300) statusClass = 'redirect';
-
-      const urlStr = truncateUrl(req.request.url);
-
-      item.innerHTML = `
-        <span class="method">${escapeHtml(req.request.method)}</span>
-        <span class="status ${statusClass}">${status}</span>
-        <span class="url" title="${escapeHtml(req.request.url)}">${escapeHtml(urlStr)}</span>
-      `;
-
-      item.addEventListener('click', () => selectRequest(index));
-      listEl.appendChild(item);
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pane = btn.dataset.pane;
+      const tab = btn.dataset.tab;
+      UiRenderer.switchTab(pane, tab);
+      if (currentRequest) {
+        refreshSearchForActiveTab();
+      }
     });
-  }
+  });
 
-  function selectRequest(index) {
-    selectedIndex = index;
-    const request = requests[index];
-
-    // Update active state in list
-    document.querySelectorAll('.request-item').forEach(el => el.classList.remove('active'));
-    const activeItem = document.querySelector(`[data-index="${index}"]`);
-    if (activeItem) activeItem.classList.add('active');
-
-    // Build raw request immediately (we have the data)
-    const rawReq = buildRawRequest(request.request);
-    reqText.value = rawReq;
-    updateLineNumbers(reqText, reqLineNumbers);
-
-    // Get response body asynchronously
-    resText.value = 'Loading response body...';
-    updateLineNumbers(resText, resLineNumbers);
-    request.getContent((body, encoding) => {
-      const rawRes = buildRawResponse(request.response, body);
-      resText.value = rawRes;
-      updateLineNumbers(resText, resLineNumbers);
-    });
-  }
-
-  function buildRawRequest(req) {
-    try {
-      const url = new URL(req.url);
-      const path = url.pathname + url.search + url.hash;
-
-      let raw = `${req.method} ${path} HTTP/1.1\r\n`;
-      raw += `Host: ${url.host}\r\n`;
-
-      const seen = new Set(['host']);
-      if (req.headers && Array.isArray(req.headers)) {
-        for (const h of req.headers) {
-          const name = h.name.toLowerCase();
-          if (!seen.has(name)) {
-            seen.add(name);
-            raw += `${h.name}: ${h.value}\r\n`;
-          }
-        }
-      }
-
-      raw += `\r\n`;
-
-      if (req.postData) {
-        if (req.postData.text) {
-          raw += req.postData.text;
-        } else if (req.postData.params && Array.isArray(req.postData.params)) {
-          const params = req.postData.params.map(p => {
-            const name = encodeURIComponent(p.name);
-            const value = encodeURIComponent(p.value);
-            return `${name}=${value}`;
-          }).join('&');
-          raw += params;
-        }
-      }
-
-      return raw;
-    } catch (e) {
-      return `Error building request: ${e.message}\n\n${JSON.stringify(req, null, 2)}`;
-    }
-  }
-
-  function buildRawResponse(res, body) {
-    try {
-      if (!res) return 'No response data available';
-
-      let raw = `HTTP/1.1 ${res.status} ${res.statusText || ''}\r\n`;
-
-      if (res.headers && Array.isArray(res.headers)) {
-        for (const h of res.headers) {
-          raw += `${h.name}: ${h.value}\r\n`;
-        }
-      }
-
-      raw += `\r\n`;
-
-      if (body) {
-        raw += body;
-      }
-
-      return raw;
-    } catch (e) {
-      return `Error building response: ${e.message}\n\n${JSON.stringify(res, null, 2)}`;
-    }
-  }
-
-  function truncateUrl(url) {
-    try {
-      const u = new URL(url);
-      return u.pathname + u.search;
-    } catch {
-      return url;
-    }
-  }
-
-  function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  function updateLineNumbers(textarea, lineNumbersEl) {
-    const text = textarea.value || '';
-    const lines = text.split('\n').length;
-    lineNumbersEl.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
-  }
-
-  function copyText(text, msg) {
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-      showToast(msg || 'Copied!');
-    }).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      showToast(msg || 'Copied!');
-    });
-  }
-
-  function downloadText(text, filename) {
-    if (!text) return;
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast(filename + ' downloaded!');
-  }
-
-  function showToast(msg) {
-    toastEl.textContent = msg;
-    toastEl.style.opacity = '1';
-    setTimeout(() => { toastEl.style.opacity = '0'; }, 2000);
-  }
-
-  // Event listeners
+  // Copy / Download
   document.getElementById('copy-req').addEventListener('click', () => {
-    copyText(reqText.value, 'Request copied!');
+    const pane = 'request';
+    const tab = UiRenderer.getActiveTab(pane);
+    const text = getPaneText(pane, tab);
+    ClipboardUtils.copyText(text, 'Request copied!');
   });
 
   document.getElementById('copy-res').addEventListener('click', () => {
-    copyText(resText.value, 'Response copied!');
+    const pane = 'response';
+    const tab = UiRenderer.getActiveTab(pane);
+    const text = getPaneText(pane, tab);
+    ClipboardUtils.copyText(text, 'Response copied!');
   });
 
   document.getElementById('download-req').addEventListener('click', () => {
-    const request = requests[selectedIndex];
+    const request = NetworkHandler.getRequest(selectedIndex);
+    const pane = 'request';
+    const tab = UiRenderer.getActiveTab(pane);
+    const text = getPaneText(pane, tab);
     const filename = request ? 'request_' + (request.request.method || 'HTTP') + '.txt' : 'request.txt';
-    downloadText(reqText.value, filename);
+    ClipboardUtils.downloadText(text, filename);
   });
 
   document.getElementById('download-res').addEventListener('click', () => {
-    const request = requests[selectedIndex];
+    const request = NetworkHandler.getRequest(selectedIndex);
+    const pane = 'response';
+    const tab = UiRenderer.getActiveTab(pane);
+    const text = getPaneText(pane, tab);
     const filename = request ? 'response_' + (request.response ? request.response.status : 'HTTP') + '.txt' : 'response.txt';
-    downloadText(resText.value, filename);
+    ClipboardUtils.downloadText(text, filename);
   });
 
   document.getElementById('clear').addEventListener('click', () => {
-    requests = [];
+    NetworkHandler.clearRequests();
     selectedIndex = -1;
+    currentRequest = null;
+    currentResponseBody = '';
     reqText.value = '';
+    prettyReqText.value = '';
     resText.value = '';
-    renderList();
+    prettyResText.value = '';
+    hexReq.textContent = '';
+    hexRes.textContent = '';
+    UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
   });
 
+  // Session UI
+  document.getElementById('new-scheme-btn').addEventListener('click', () => {
+    editingSchemeId = null;
+    document.getElementById('scheme-name').value = '';
+    document.getElementById('scheme-domains').value = '';
+    document.getElementById('scheme-regex').value = '';
+    document.getElementById('scheme-desc').value = '';
+    document.getElementById('scheme-editor').style.display = 'block';
+    renderFieldList([]);
+  });
+
+  document.getElementById('cancel-scheme-btn').addEventListener('click', () => {
+    document.getElementById('scheme-editor').style.display = 'none';
+    editingSchemeId = null;
+  });
+
+  document.getElementById('save-scheme-btn').addEventListener('click', async () => {
+    const name = document.getElementById('scheme-name').value.trim();
+    if (!name) {
+      ClipboardUtils.showToast('Scheme name is required');
+      return;
+    }
+    const domains = document.getElementById('scheme-domains').value.split(',').map(s => s.trim()).filter(Boolean);
+    const scheme = {
+      id: editingSchemeId || 'scheme_' + Date.now(),
+      name: name,
+      targetDomains: domains,
+      domainRegex: document.getElementById('scheme-regex').value.trim(),
+      description: document.getElementById('scheme-desc').value.trim(),
+      isActive: false,
+      persist: true
+    };
+    if (editingSchemeId) {
+      await SessionStorage.updateScheme(scheme);
+    } else {
+      const result = await SessionStorage.saveScheme(scheme);
+      if (!result.success) {
+        ClipboardUtils.showToast(result.message);
+        return;
+      }
+    }
+    await loadSchemes();
+    document.getElementById('scheme-editor').style.display = 'none';
+    editingSchemeId = null;
+  });
+
+  document.getElementById('add-field-btn').addEventListener('click', async () => {
+    if (!editingSchemeId) {
+      ClipboardUtils.showToast('Please save scheme first');
+      return;
+    }
+    const name = document.getElementById('field-name').value.trim();
+    const locationType = document.getElementById('field-location').value;
+    const locationName = document.getElementById('field-location-name').value.trim();
+    const mode = document.getElementById('field-mode').value;
+    const pattern = document.getElementById('field-pattern').value.trim();
+    if (!name || !pattern) {
+      ClipboardUtils.showToast('Field name and pattern are required');
+      return;
+    }
+    const field = {
+      name: name,
+      location: { type: locationType, name: locationName },
+      mode: mode,
+      pattern: pattern,
+      persist: true
+    };
+    const result = await SessionStorage.saveField(editingSchemeId, field);
+    if (!result.success) {
+      ClipboardUtils.showToast(result.message);
+      return;
+    }
+    document.getElementById('field-name').value = '';
+    document.getElementById('field-pattern').value = '';
+    const fields = await SessionStorage.loadFields(editingSchemeId);
+    renderFieldList(fields);
+  });
+
+  document.getElementById('copy-session-btn').addEventListener('click', async () => {
+    if (!activeScheme || !currentRequest) {
+      ClipboardUtils.showToast('No active scheme or request');
+      return;
+    }
+    const result = SessionExtractor.applySchemeToRequest(currentRequest, activeScheme);
+    if (result) {
+      const text = Object.entries(result).map(([k, v]) => `${k}: ${v}`).join('\n');
+      ClipboardUtils.copyText(text, 'Session copied!');
+    } else {
+      ClipboardUtils.showToast('No session data extracted');
+    }
+  });
+
+  // Core functions
+  function selectRequest(index) {
+    selectedIndex = index;
+    const request = NetworkHandler.getRequest(index);
+    currentRequest = request;
+
+    UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
+
+    if (!request) return;
+
+    // Build request contents
+    const rawReq = ContentFormatter.buildRawRequest(request.request);
+    const prettyReq = ContentFormatter.buildPrettyRequest(request.request);
+    const hexReqText = ContentFormatter.buildHexRequest(request.request);
+
+    UiRenderer.updatePaneContent('request', 'raw', rawReq);
+    UiRenderer.updatePaneContent('request', 'pretty', prettyReq);
+    UiRenderer.updatePaneContent('request', 'hex', hexReqText);
+
+    // Response loading
+    UiRenderer.updatePaneContent('response', 'raw', 'Loading response body...');
+    UiRenderer.updatePaneContent('response', 'pretty', 'Loading response body...');
+    UiRenderer.updatePaneContent('response', 'hex', 'Loading response body...');
+
+    request.getContent((body, encoding) => {
+      currentResponseBody = body || '';
+      const rawRes = ContentFormatter.buildRawResponse(request.response, body);
+      const prettyRes = ContentFormatter.buildPrettyResponse(request.response, body);
+      const hexResText = ContentFormatter.buildHexResponse(request.response, body);
+
+      UiRenderer.updatePaneContent('response', 'raw', rawRes);
+      UiRenderer.updatePaneContent('response', 'pretty', prettyRes);
+      UiRenderer.updatePaneContent('response', 'hex', hexResText);
+
+      // Smart tab switching
+      const resContentType = ContentFormatter.detectContentType(request.response ? request.response.headers : []);
+      if (resContentType === 'json' || resContentType === 'xml') {
+        UiRenderer.setActiveTab('response', 'pretty');
+      } else if (resContentType === 'binary') {
+        UiRenderer.setActiveTab('response', 'hex');
+      } else {
+        UiRenderer.setActiveTab('response', 'raw');
+      }
+
+      const reqContentType = ContentFormatter.detectContentType(request.request.headers);
+      if (reqContentType === 'json' || reqContentType === 'xml') {
+        UiRenderer.setActiveTab('request', 'pretty');
+      } else if (reqContentType === 'binary') {
+        UiRenderer.setActiveTab('request', 'hex');
+      } else {
+        UiRenderer.setActiveTab('request', 'raw');
+      }
+
+      refreshSearchForActiveTab();
+    });
+  }
+
+  function getPaneText(pane, tab) {
+    if (pane === 'request') {
+      if (tab === 'raw') return reqText ? reqText.value : '';
+      if (tab === 'pretty') return prettyReqText ? prettyReqText.value : '';
+      if (tab === 'hex') return hexReq ? hexReq.textContent : '';
+    } else {
+      if (tab === 'raw') return resText ? resText.value : '';
+      if (tab === 'pretty') return prettyResText ? prettyResText.value : '';
+      if (tab === 'hex') return hexRes ? hexRes.textContent : '';
+    }
+    return '';
+  }
+
+  function performGlobalSearch(pattern, options) {
+    if (!pattern) {
+      SearchHighlighter.clearHighlights();
+      clearAllHighlights();
+      return;
+    }
+    const pane = 'request';
+    const tab = UiRenderer.getActiveTab(pane);
+    const text = getPaneText(pane, tab);
+    const matches = SearchHighlighter.performSearch(text, pattern, options);
+    applyHighlights(pane, tab, matches);
+  }
+
+  function refreshSearchForActiveTab() {
+    const text = SearchHighlighter.lastSearchText;
+    const options = SearchHighlighter.lastOptions;
+    if (text) {
+      performGlobalSearch(text, options);
+    }
+  }
+
+  function applyHighlights(pane, tab, matches) {
+    clearAllHighlights();
+    if (!matches || matches.length === 0) return;
+
+    const paneEl = document.getElementById(pane + '-pane');
+    if (!paneEl) return;
+    const contentEl = paneEl.querySelector(`.tab-content[data-tab="${tab}"]`);
+    if (!contentEl) return;
+
+    if (tab === 'hex') {
+      const hexDisplay = contentEl.querySelector('.hex-display');
+      if (hexDisplay) {
+        SearchHighlighter.highlightHexMatches(hexDisplay, matches);
+      }
+    } else {
+      const textarea = contentEl.querySelector('textarea');
+      if (textarea) {
+        let overlay = contentEl.querySelector('.highlight-overlay');
+        if (!overlay) {
+          overlay = DomUtils.createOverlayHighlighter(textarea);
+        }
+        DomUtils.highlightOverlay(overlay, textarea.value, matches);
+      }
+    }
+  }
+
+  function clearAllHighlights() {
+    document.querySelectorAll('.highlight-overlay').forEach(el => el.innerHTML = '');
+    document.querySelectorAll('.hex-display').forEach(el => {
+      if (el.innerHTML !== el.textContent) {
+        el.textContent = el.textContent;
+      }
+    });
+  }
+
+  async function loadSchemes() {
+    schemes = await SessionStorage.loadSchemes();
+    const activeId = await SessionStorage.getActiveScheme();
+    activeScheme = schemes.find(s => s.id === activeId) || null;
+    renderSchemeList();
+  }
+
+  function renderSchemeList() {
+    const list = document.getElementById('scheme-list');
+    if (!list) return;
+    list.innerHTML = '';
+    schemes.forEach(scheme => {
+      const item = document.createElement('div');
+      item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+      const activeBadge = scheme.isActive ? '<span class="badge bg-primary">Active</span>' : '';
+      item.innerHTML = `
+        <div>
+          <strong>${scheme.name}</strong> ${activeBadge}
+          <div class="text-muted small">${scheme.description || ''}</div>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-outline-primary edit-scheme" data-id="${scheme.id}">Edit</button>
+          <button class="btn btn-sm btn-outline-success activate-scheme" data-id="${scheme.id}">Activate</button>
+          <button class="btn btn-sm btn-outline-danger delete-scheme" data-id="${scheme.id}">Delete</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+
+    list.querySelectorAll('.edit-scheme').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const scheme = schemes.find(s => s.id === id);
+        if (!scheme) return;
+        editingSchemeId = id;
+        document.getElementById('scheme-name').value = scheme.name;
+        document.getElementById('scheme-domains').value = (scheme.targetDomains || []).join(', ');
+        document.getElementById('scheme-regex').value = scheme.domainRegex || '';
+        document.getElementById('scheme-desc').value = scheme.description || '';
+        document.getElementById('scheme-editor').style.display = 'block';
+        const fields = await SessionStorage.loadFields(id);
+        renderFieldList(fields);
+      });
+    });
+
+    list.querySelectorAll('.activate-scheme').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        await SessionStorage.setActiveScheme(id);
+        await loadSchemes();
+      });
+    });
+
+    list.querySelectorAll('.delete-scheme').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        await SessionStorage.deleteScheme(id);
+        await loadSchemes();
+      });
+    });
+  }
+
+  function renderFieldList(fields) {
+    const list = document.getElementById('field-list');
+    if (!list) return;
+    list.innerHTML = '';
+    fields.forEach(field => {
+      const item = document.createElement('div');
+      item.className = 'list-group-item d-flex justify-content-between align-items-center';
+      item.innerHTML = `
+        <div>
+          <strong>${field.name}</strong> <span class="badge bg-secondary">${field.mode}</span>
+          <div class="text-muted small">${field.location.type}: ${field.location.name || '-'} | ${field.pattern}</div>
+        </div>
+        <button class="btn btn-sm btn-outline-danger delete-field" data-id="${field.id}">Delete</button>
+      `;
+      list.appendChild(item);
+    });
+
+    list.querySelectorAll('.delete-field').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const fieldId = btn.dataset.id;
+        if (editingSchemeId) {
+          await SessionStorage.deleteField(editingSchemeId, fieldId);
+          const fields = await SessionStorage.loadFields(editingSchemeId);
+          renderFieldList(fields);
+        }
+      });
+    });
+  }
+
+  async function checkSessionExtraction(request) {
+    if (!activeScheme) return;
+    const result = SessionExtractor.applySchemeToRequest(request, activeScheme);
+    if (result) {
+      const keys = Object.keys(result).join(', ');
+      ClipboardUtils.showToast(`Session extracted: ${keys}`, 3000);
+    }
+  }
+
   // Initial render
-  renderList();
+  UiRenderer.renderRequestList(NetworkHandler.getRequests(), selectedIndex, selectRequest);
 })();
