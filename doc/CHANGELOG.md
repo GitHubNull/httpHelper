@@ -138,6 +138,18 @@
 
 ---
 
+## [1.3.3] - 2026-06-27
+
+### Fixed
+- 修复 UI 渲染器（`ui-renderer.js`）面板渲染和交互问题
+- 修复面板样式（`panel.css`）样式兼容性和布局问题
+- 修复面板 HTML 结构（`panel.html`）组件嵌套和布局容器调整
+- 修复主入口模块（`panel.js`）事件绑定和模块协调逻辑
+- 修复剪贴板工具（`clipboard-utils.js`）复制和下载功能
+- 新增 Bootstrap Icons 图标库（`src/third_lib/bootstrap-icons/`）
+
+---
+
 ## [1.3.2] - 2026-06-27
 
 ### Fixed

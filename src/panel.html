@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="third_lib/bootstrap.min.css">
+  <link rel="stylesheet" href="third_lib/bootstrap-icons/bootstrap-icons.css">
   <link rel="stylesheet" href="third_lib/highlight/styles/github.min.css" media="(prefers-color-scheme: light)">
   <link rel="stylesheet" href="third_lib/highlight/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="panel.css">
@@ -10,22 +11,22 @@
 <body class="d-flex flex-column vh-100 overflow-hidden">
   <!-- Toolbar -->
   <div class="toolbar d-flex align-items-center px-2 gap-1 border-bottom flex-shrink-0">
-    <button id="record-toggle" class="btn btn-sm py-0 px-2 btn-recording active" title="Pause/Resume recording">
-      <span class="rec-dot"></span> Rec
+    <button id="record-toggle" class="btn btn-sm py-0 px-2 btn-recording active" title="暂停/恢复录制">
+      <span class="rec-dot"></span>
     </button>
-    <button id="clear" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Clear all captured requests">Clear</button>
-    <span id="count" class="small text-muted">0 requests</span>
+    <button id="clear" class="btn btn-sm btn-outline-secondary py-0 px-2" title="清空所有捕获的请求"><i class="bi bi-trash3"></i></button>
+    <span id="count" class="small text-muted">0 个请求</span>
   </div>
 
   <!-- Main Tabs -->
   <ul class="nav nav-tabs px-2 flex-shrink-0" id="main-tabs" role="tablist">
     <li class="nav-item">
       <button class="nav-link active py-1 px-3 small" data-bs-toggle="tab"
-              data-bs-target="#tab-http-history" type="button" role="tab">HTTP History</button>
+              data-bs-target="#tab-http-history" type="button" role="tab">HTTP 历史</button>
     </li>
     <li class="nav-item">
       <button class="nav-link py-1 px-3 small" data-bs-toggle="tab"
-              data-bs-target="#tab-session-config" type="button" role="tab">Session Config</button>
+              data-bs-target="#tab-session-config" type="button" role="tab">会话复制配置</button>
     </li>
   </ul>
 
@@ -37,8 +38,8 @@
         <!-- Request Table Area (Left) -->
         <div class="d-flex flex-column overflow-hidden" id="request-table-area" style="flex:0 0 40%;min-width:200px;max-width:70%">
           <div class="filter-bar d-flex align-items-center px-1 border-bottom flex-shrink-0 gap-1" style="height:24px">
-            <select id="filter-method" class="form-select form-select-sm filter-select" title="Filter by method">
-              <option value="">All Methods</option>
+            <select id="filter-method" class="form-select form-select-sm filter-select" title="按方法过滤">
+              <option value="">所有方法</option>
               <option value="GET">GET</option>
               <option value="POST">POST</option>
               <option value="PUT">PUT</option>
@@ -47,58 +48,58 @@
               <option value="OPTIONS">OPTIONS</option>
               <option value="HEAD">HEAD</option>
             </select>
-            <button class="btn btn-sm btn-outline-secondary py-0 px-1 search-opt-btn" id="filter-advanced-toggle" title="Show advanced filters">Advanced</button>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1 search-opt-btn" id="filter-advanced-toggle" title="显示高级过滤"><i class="bi bi-sliders2"></i></button>
             <div class="filter-search-wrapper position-relative flex-grow-1">
-              <input type="text" id="filter-search" class="form-control form-control-sm filter-search-input" placeholder="Filter (search URL, host, method...)">
+              <input type="text" id="filter-search" class="form-control form-control-sm filter-search-input" placeholder="过滤 (搜索 URL, 主机, 方法...)">
             </div>
-            <button class="btn btn-sm btn-outline-secondary py-0 px-1 ms-auto" id="col-config-btn" title="Configure columns" style="font-size:10px">Columns</button>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1 ms-auto" id="col-config-btn" title="配置列"><i class="bi bi-layout-three-columns"></i></button>
           </div>
           <div class="filter-bar-advanced d-none align-items-center px-1 border-bottom flex-shrink-0 gap-1" id="filter-advanced-row" style="height:24px">
-            <select id="filter-type" class="form-select form-select-sm filter-select" title="Filter by content type">
-              <option value="">All Types</option>
+            <select id="filter-type" class="form-select form-select-sm filter-select" title="按内容类型过滤">
+              <option value="">所有类型</option>
               <option value="json">JSON</option>
               <option value="xml">XML</option>
               <option value="html">HTML</option>
               <option value="js">JS</option>
               <option value="css">CSS</option>
-              <option value="image">Image</option>
-              <option value="font">Font</option>
-              <option value="binary">Binary</option>
-              <option value="text">Text</option>
-              <option value="other">Other</option>
+              <option value="image">图片</option>
+              <option value="font">字体</option>
+              <option value="binary">二进制</option>
+              <option value="text">文本</option>
+              <option value="other">其他</option>
             </select>
-            <select id="filter-color" class="form-select form-select-sm filter-select" title="Filter by color tag">
-              <option value="">All Tags</option>
-              <option value="red">Red</option>
-              <option value="orange">Orange</option>
-              <option value="yellow">Yellow</option>
-              <option value="green">Green</option>
-              <option value="blue">Blue</option>
-              <option value="purple">Purple</option>
-              <option value="pink">Pink</option>
-              <option value="gray">Gray</option>
-              <option value="none">No Tag</option>
+            <select id="filter-color" class="form-select form-select-sm filter-select" title="按颜色标签过滤">
+              <option value="">所有标签</option>
+              <option value="red">红色</option>
+              <option value="orange">橙色</option>
+              <option value="yellow">黄色</option>
+              <option value="green">绿色</option>
+              <option value="blue">蓝色</option>
+              <option value="purple">紫色</option>
+              <option value="pink">粉色</option>
+              <option value="gray">灰色</option>
+              <option value="none">无标签</option>
             </select>
-            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-regex" title="Toggle regex">.*</button>
-            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-case" title="Toggle case sensitive">Aa</button>
-            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-not" title="Invert filter (NOT)">NOT</button>
+            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-regex" title="切换正则">.*</button>
+            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-case" title="切换大小写敏感">Aa</button>
+            <button class="btn btn-sm btn-outline-secondary search-opt-btn" id="filter-not" title="反向过滤 (NOT)">NOT</button>
           </div>
           <div class="flex-grow-1 overflow-auto" id="request-table-scroll">
             <table id="request-table" class="table table-sm table-striped table-hover mb-0 small" style="table-layout:auto;white-space:nowrap">
               <thead class="table-light sticky-top">
                 <tr>
                   <th data-col="index" data-mandatory="true" style="width:32px">#</th>
-                  <th data-col="color" style="width:28px">Tag</th>
-                  <th data-col="method" data-mandatory="true" data-sortable="true" style="width:60px">Method <span class="sort-indicator"></span></th>
-                  <th data-col="host" data-sortable="true">Host <span class="sort-indicator"></span></th>
-                  <th data-col="url" data-mandatory="true" data-sortable="true">Path <span class="sort-indicator"></span></th>
-                  <th data-col="status" data-sortable="true" style="width:60px">Status <span class="sort-indicator"></span></th>
-                  <th data-col="type" data-sortable="true" style="width:60px">Type <span class="sort-indicator"></span></th>
-                  <th data-col="length" data-sortable="true" style="width:50px">Length <span class="sort-indicator"></span></th>
-                  <th data-col="reqtime" data-sortable="true" style="width:140px">Req Time <span class="sort-indicator"></span></th>
-                  <th data-col="restime" data-sortable="true" style="width:140px">Res Time <span class="sort-indicator"></span></th>
-                  <th data-col="time" data-sortable="true" style="width:70px">Duration <span class="sort-indicator"></span></th>
-                  <th data-col="note" data-sortable="true" style="width:120px">Note <span class="sort-indicator"></span></th>
+                  <th data-col="color" style="width:28px">标签</th>
+                  <th data-col="method" data-mandatory="true" data-sortable="true" style="width:60px">方法 <span class="sort-indicator"></span></th>
+                  <th data-col="host" data-sortable="true">主机 <span class="sort-indicator"></span></th>
+                  <th data-col="url" data-mandatory="true" data-sortable="true">路径 <span class="sort-indicator"></span></th>
+                  <th data-col="status" data-sortable="true" style="width:60px">状态 <span class="sort-indicator"></span></th>
+                  <th data-col="type" data-sortable="true" style="width:60px">类型 <span class="sort-indicator"></span></th>
+                  <th data-col="length" data-sortable="true" style="width:50px">长度 <span class="sort-indicator"></span></th>
+                  <th data-col="reqtime" data-sortable="true" style="width:140px">请求时间 <span class="sort-indicator"></span></th>
+                  <th data-col="restime" data-sortable="true" style="width:140px">响应时间 <span class="sort-indicator"></span></th>
+                  <th data-col="time" data-sortable="true" style="width:70px">耗时 <span class="sort-indicator"></span></th>
+                  <th data-col="note" data-sortable="true" style="width:120px">备注 <span class="sort-indicator"></span></th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -113,13 +114,13 @@
         <div class="d-flex flex-column overflow-hidden" id="http-detail-area" style="flex:1 1 60%;min-width:300px">
           <!-- Layout Bar -->
           <div class="layout-bar d-flex align-items-center justify-content-center gap-1 px-1 border-bottom flex-shrink-0">
-            <button class="btn btn-sm btn-outline-secondary py-0 px-1 layout-btn" data-layout="vertical" title="Vertical layout (top/bottom)">&#8597;</button>
-            <button class="btn btn-sm btn-outline-secondary py-0 px-1 layout-btn" data-layout="horizontal" title="Horizontal layout (left/right)">&#8596;</button>
-            <button class="btn btn-sm btn-outline-secondary py-0 px-1 layout-btn" data-layout="tabs" title="Tab layout (switch panels)">&#9776;</button>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1 layout-btn" data-layout="vertical" title="垂直布局 (上下)"><i class="bi bi-square-half icon-rotate-90"></i></button>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1 layout-btn" data-layout="horizontal" title="水平布局 (左右)"><i class="bi bi-square-half"></i></button>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-1 layout-btn" data-layout="tabs" title="标签页布局 (切换面板)"><i class="bi bi-window"></i></button>
             <!-- Tab layout switcher (visible only in tabs mode) -->
             <div class="tab-pane-switcher d-none ms-2 gap-1">
-              <button class="btn btn-sm btn-primary py-0 px-2 pane-tab-btn active" data-target="request" title="Show Request">Request</button>
-              <button class="btn btn-sm btn-outline-primary py-0 px-2 pane-tab-btn" data-target="response" title="Show Response">Response</button>
+              <button class="btn btn-sm btn-primary py-0 px-2 pane-tab-btn active" data-target="request" title="显示请求"><i class="bi bi-arrow-right-circle"></i></button>
+              <button class="btn btn-sm btn-outline-primary py-0 px-2 pane-tab-btn" data-target="response" title="显示响应"><i class="bi bi-arrow-left-circle"></i></button>
             </div>
           </div>
           <!-- Request/Response Panes -->
@@ -128,23 +129,23 @@
             <div class="pane" id="request-pane">
               <div class="pane-header d-flex align-items-center px-1 border-bottom flex-shrink-0">
                 <div class="tab-nav d-flex">
-                  <button class="tab-btn active" data-tab="raw" data-pane="request">Raw</button>
-                  <button class="tab-btn" data-tab="pretty" data-pane="request">Pretty</button>
+                  <button class="tab-btn active" data-tab="raw" data-pane="request">原始</button>
+                  <button class="tab-btn" data-tab="pretty" data-pane="request">美化</button>
                   <button class="tab-btn" data-tab="hex" data-pane="request">Hex</button>
                 </div>
 
                 <div class="pane-actions d-flex gap-1 ms-auto">
-                  <button class="btn btn-sm btn-outline-info py-0 px-1 copy-session-btn" id="copy-req-session" title="Copy extracted session data">Session</button>
-                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-req-headers" title="Copy request headers only">Headers</button>
-                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-req-body" title="Copy request body (text only)" disabled>Body</button>
-                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-req" title="Copy full request">Copy</button>
-                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="download-req" title="Download full request as file">Download</button>
+                  <button class="btn btn-sm btn-outline-info py-0 px-1 copy-session-btn" id="copy-req-session" title="复制提取的会话数据"><i class="bi bi-key"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-req-headers" title="仅复制请求头"><i class="bi bi-card-list"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-req-body" title="复制请求体 (仅文本)" disabled><i class="bi bi-file-text"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-req" title="复制完整请求"><i class="bi bi-clipboard"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="download-req" title="下载完整请求为文件"><i class="bi bi-download"></i></button>
                 </div>
               </div>
               <div class="tab-content active" data-tab="raw">
                 <div class="code-view">
                   <div class="line-numbers" id="req-line-numbers-raw"></div>
-                  <textarea id="raw-request" readonly placeholder="Select a request..."></textarea>
+                  <textarea id="raw-request" readonly placeholder="选择一个请求..."></textarea>
                 </div>
               </div>
               <div class="tab-content" data-tab="pretty">
@@ -160,15 +161,15 @@
               </div>
               <!-- Search Bar (bottom, Burp Suite style) -->
               <div class="pane-search-bar d-flex align-items-center px-1 border-top flex-shrink-0">
-                <button class="btn btn-outline-secondary py-0 px-1 search-opt-btn" id="req-search-regex" title="Toggle regex search">.*</button>
-                <button class="btn btn-outline-secondary py-0 px-1 search-opt-btn" id="req-search-case" title="Toggle case sensitive">Aa</button>
-                <button class="btn btn-outline-secondary py-0 px-1 search-nav-btn" id="req-search-prev" title="Previous match">&#9664;</button>
-                <button class="btn btn-outline-secondary py-0 px-1 search-nav-btn" id="req-search-next" title="Next match">&#9654;</button>
+                <button class="btn btn-outline-secondary py-0 px-1 search-opt-btn" id="req-search-regex" title="切换正则搜索">.*</button>
+                <button class="btn btn-outline-secondary py-0 px-1 search-opt-btn" id="req-search-case" title="切换大小写敏感">Aa</button>
+                <button class="btn btn-outline-secondary py-0 px-1 search-nav-btn" id="req-search-prev" title="上一个匹配"><i class="bi bi-caret-left"></i></button>
+                <button class="btn btn-outline-secondary py-0 px-1 search-nav-btn" id="req-search-next" title="下一个匹配"><i class="bi bi-caret-right"></i></button>
                 <div class="search-input-wrapper">
-                  <input type="text" class="form-control form-control-sm py-0 search-input" id="req-search-input" placeholder="Search">
-                  <span class="search-input-icon search-icon-state" id="req-search-icon" title="Search">&#128269;</span>
+                  <input type="text" class="form-control form-control-sm py-0 search-input" id="req-search-input" placeholder="搜索">
+                  <span class="search-input-icon search-icon-state" id="req-search-icon" title="搜索"><i class="bi bi-search"></i></span>
                 </div>
-                <span class="search-count small text-muted" id="req-search-count">0 highlights</span>
+                <span class="search-count small text-muted" id="req-search-count">0 个高亮</span>
               </div>
             </div>
 
@@ -180,22 +181,22 @@
               <div class="pane-header d-flex align-items-center px-1 border-bottom flex-shrink-0">
 
                 <div class="tab-nav d-flex">
-                  <button class="tab-btn active" data-tab="raw" data-pane="response">Raw</button>
-                  <button class="tab-btn" data-tab="pretty" data-pane="response">Pretty</button>
+                  <button class="tab-btn active" data-tab="raw" data-pane="response">原始</button>
+                  <button class="tab-btn" data-tab="pretty" data-pane="response">美化</button>
                   <button class="tab-btn" data-tab="hex" data-pane="response">Hex</button>
                 </div>
                 <div class="pane-actions d-flex gap-1 ms-auto">
-                  <button class="btn btn-sm btn-outline-info py-0 px-1 copy-session-btn" id="copy-res-session" title="Copy extracted session data">Session</button>
-                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-res-headers" title="Copy response headers only">Headers</button>
-                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-res-body" title="Copy response body (text only)" disabled>Body</button>
-                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-res" title="Copy full response">Copy</button>
-                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="download-res" title="Download full response as file">Download</button>
+                  <button class="btn btn-sm btn-outline-info py-0 px-1 copy-session-btn" id="copy-res-session" title="复制提取的会话数据"><i class="bi bi-key"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-res-headers" title="仅复制响应头"><i class="bi bi-card-list"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-res-body" title="复制响应体 (仅文本)" disabled><i class="bi bi-file-text"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="copy-res" title="复制完整响应"><i class="bi bi-clipboard"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-1" id="download-res" title="下载完整响应为文件"><i class="bi bi-download"></i></button>
                 </div>
               </div>
               <div class="tab-content active" data-tab="raw">
                 <div class="code-view">
                   <div class="line-numbers" id="res-line-numbers-raw"></div>
-                  <textarea id="raw-response" readonly placeholder="Select a request..."></textarea>
+                  <textarea id="raw-response" readonly placeholder="选择一个请求..."></textarea>
                 </div>
               </div>
               <div class="tab-content" data-tab="pretty">
@@ -211,15 +212,15 @@
               </div>
               <!-- Search Bar (bottom, Burp Suite style) -->
               <div class="pane-search-bar d-flex align-items-center px-1 border-top flex-shrink-0">
-                <button class="btn btn-outline-secondary py-0 px-1 search-opt-btn" id="res-search-regex" title="Toggle regex search">.*</button>
-                <button class="btn btn-outline-secondary py-0 px-1 search-opt-btn" id="res-search-case" title="Toggle case sensitive">Aa</button>
-                <button class="btn btn-outline-secondary py-0 px-1 search-nav-btn" id="res-search-prev" title="Previous match">&#9664;</button>
-                <button class="btn btn-outline-secondary py-0 px-1 search-nav-btn" id="res-search-next" title="Next match">&#9654;</button>
+                <button class="btn btn-outline-secondary py-0 px-1 search-opt-btn" id="res-search-regex" title="切换正则搜索">.*</button>
+                <button class="btn btn-outline-secondary py-0 px-1 search-opt-btn" id="res-search-case" title="切换大小写敏感">Aa</button>
+                <button class="btn btn-outline-secondary py-0 px-1 search-nav-btn" id="res-search-prev" title="上一个匹配"><i class="bi bi-caret-left"></i></button>
+                <button class="btn btn-outline-secondary py-0 px-1 search-nav-btn" id="res-search-next" title="下一个匹配"><i class="bi bi-caret-right"></i></button>
                 <div class="search-input-wrapper">
-                  <input type="text" class="form-control form-control-sm py-0 search-input" id="res-search-input" placeholder="Search">
-                  <span class="search-input-icon search-icon-state" id="res-search-icon" title="Search">&#128269;</span>
+                  <input type="text" class="form-control form-control-sm py-0 search-input" id="res-search-input" placeholder="搜索">
+                  <span class="search-input-icon search-icon-state" id="res-search-icon" title="搜索"><i class="bi bi-search"></i></span>
                 </div>
-                <span class="search-count small text-muted" id="res-search-count">0 highlights</span>
+                <span class="search-count small text-muted" id="res-search-count">0 个高亮</span>
               </div>
             </div>
           </div>
@@ -233,11 +234,11 @@
         <ul class="nav nav-pills flex-shrink-0 mb-1" id="session-sub-tabs" role="tablist">
           <li class="nav-item">
             <button class="nav-link active py-1 px-2 small" data-bs-toggle="pill"
-                    data-bs-target="#session-fields-tab" type="button">Fields</button>
+                    data-bs-target="#session-fields-tab" type="button">字段</button>
           </li>
           <li class="nav-item">
             <button class="nav-link py-1 px-2 small" data-bs-toggle="pill"
-                    data-bs-target="#session-schemes-tab" type="button">Schemes</button>
+                    data-bs-target="#session-schemes-tab" type="button">方案</button>
           </li>
         </ul>
         <div class="tab-content flex-grow-1 overflow-hidden">
@@ -245,23 +246,23 @@
           <div class="tab-pane fade show active h-100" id="session-fields-tab" role="tabpanel">
             <div class="d-flex flex-column h-100">
               <div class="d-flex gap-1 mb-1 flex-shrink-0 align-items-center">
-                <button id="add-field-btn" class="btn btn-sm btn-success py-0" title="Create a new session field">New Field</button>
+                <button id="add-field-btn" class="btn btn-sm btn-success py-0" title="创建新会话字段"><i class="bi bi-plus-lg"></i></button>
                 <input type="text" class="form-control form-control-sm py-0 ms-auto" id="fields-search-input"
-                       placeholder="Filter fields..." style="max-width:200px;height:22px;font-size:11px">
+                       placeholder="过滤字段..." style="max-width:200px;height:22px;font-size:11px">
               </div>
               <div class="flex-grow-1 overflow-auto">
                 <table id="fields-table" class="table table-sm table-striped table-hover table-bordered mb-0 small">
                   <thead class="table-light sticky-top">
                     <tr>
                       <th data-col="index" style="width:32px">#</th>
-                      <th data-col="enabled" style="width:50px">On</th>
-                      <th data-col="name">Name</th>
-                      <th data-col="locationType">Location</th>
-                      <th data-col="locationName">Source</th>
-                      <th data-col="mode">Mode</th>
-                      <th data-col="pattern">Pattern</th>
-                      <th data-col="usedBy">Used By</th>
-                      <th data-col="actions" style="width:80px">Actions</th>
+                      <th data-col="enabled" style="width:50px">启用</th>
+                      <th data-col="name">名称</th>
+                      <th data-col="locationType">位置</th>
+                      <th data-col="locationName">来源</th>
+                      <th data-col="mode">模式</th>
+                      <th data-col="pattern">匹配规则</th>
+                      <th data-col="usedBy">使用者</th>
+                      <th data-col="actions" style="width:80px">操作</th>
                     </tr>
                   </thead>
                   <tbody></tbody>
@@ -273,22 +274,22 @@
           <div class="tab-pane fade h-100" id="session-schemes-tab" role="tabpanel">
             <div class="d-flex flex-column h-100">
               <div class="d-flex gap-1 mb-1 flex-shrink-0 align-items-center">
-                <button id="add-scheme-btn" class="btn btn-sm btn-success py-0" title="Create a new session scheme">New Scheme</button>
+                <button id="add-scheme-btn" class="btn btn-sm btn-success py-0" title="创建新会话方案"><i class="bi bi-plus-lg"></i></button>
                 <input type="text" class="form-control form-control-sm py-0 ms-auto" id="schemes-search-input"
-                       placeholder="Filter schemes..." style="max-width:200px;height:22px;font-size:11px">
+                       placeholder="过滤方案..." style="max-width:200px;height:22px;font-size:11px">
               </div>
               <div class="flex-grow-1 overflow-auto">
                 <table id="schemes-table" class="table table-sm table-striped table-hover table-bordered mb-0 small">
                   <thead class="table-light sticky-top">
                     <tr>
                       <th data-col="index" style="width:32px">#</th>
-                      <th data-col="enabled" style="width:50px">On</th>
-                      <th data-col="name">Name</th>
-                      <th data-col="domains">Domains</th>
-                      <th data-col="regex">Regex</th>
-                      <th data-col="description">Description</th>
-                      <th data-col="fieldCount" style="width:50px">Fields</th>
-                      <th data-col="actions" style="width:80px">Actions</th>
+                      <th data-col="enabled" style="width:50px">启用</th>
+                      <th data-col="name">名称</th>
+                      <th data-col="domains">域名</th>
+                      <th data-col="regex">正则</th>
+                      <th data-col="description">描述</th>
+                      <th data-col="fieldCount" style="width:50px">字段数</th>
+                      <th data-col="actions" style="width:80px">操作</th>
                     </tr>
                   </thead>
                   <tbody></tbody>
@@ -306,43 +307,43 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header py-1 px-2">
-          <h6 class="modal-title small fw-bold">Field Editor</h6>
+          <h6 class="modal-title small fw-bold">字段编辑器</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-2">
           <div class="mb-1">
-            <label class="form-label small mb-0">Name</label>
+            <label class="form-label small mb-0">名称</label>
             <input type="text" class="form-control form-control-sm" id="edit-field-name">
           </div>
           <div class="mb-1">
-            <label class="form-label small mb-0">Location</label>
+            <label class="form-label small mb-0">位置</label>
             <select class="form-select form-select-sm" id="edit-field-location">
-              <option value="header">Header</option>
-              <option value="body">Body</option>
+              <option value="header">头部</option>
+              <option value="body">主体</option>
             </select>
           </div>
           <div class="mb-1">
-            <label class="form-label small mb-0">Source (Header Name / Body)</label>
+            <label class="form-label small mb-0">来源 (头部名称 / 主体)</label>
             <input type="text" class="form-control form-control-sm" id="edit-field-location-name">
           </div>
           <div class="mb-1">
-            <label class="form-label small mb-0">Mode</label>
+            <label class="form-label small mb-0">模式</label>
             <select class="form-select form-select-sm" id="edit-field-mode">
-              <option value="substring">Substring</option>
-              <option value="regex">Regex</option>
-              <option value="keyword">Keyword</option>
+              <option value="substring">子串</option>
+              <option value="regex">正则</option>
+              <option value="keyword">关键词</option>
               <option value="xpath">XPath</option>
               <option value="jsonpath">JSONPath</option>
             </select>
           </div>
           <div class="mb-1">
-            <label class="form-label small mb-0">Pattern</label>
+            <label class="form-label small mb-0">匹配规则</label>
             <input type="text" class="form-control form-control-sm" id="edit-field-pattern">
           </div>
         </div>
         <div class="modal-footer py-1 px-2">
-          <button class="btn btn-sm btn-secondary py-0" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-sm btn-primary py-0" id="save-field-btn">Save</button>
+          <button class="btn btn-sm btn-secondary py-0" data-bs-dismiss="modal">取消</button>
+          <button class="btn btn-sm btn-primary py-0" id="save-field-btn">保存</button>
         </div>
       </div>
     </div>
@@ -353,45 +354,45 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header py-1 px-2">
-          <h6 class="modal-title small fw-bold">Scheme Editor</h6>
+          <h6 class="modal-title small fw-bold">方案编辑器</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-2">
           <div class="mb-1">
-            <label class="form-label small mb-0">Name</label>
+            <label class="form-label small mb-0">名称</label>
             <input type="text" class="form-control form-control-sm" id="edit-scheme-name">
           </div>
           <div class="mb-1">
-            <label class="form-label small mb-0">Target Domains (comma separated)</label>
+            <label class="form-label small mb-0">目标域名 (逗号分隔)</label>
             <input type="text" class="form-control form-control-sm" id="edit-scheme-domains">
           </div>
           <div class="mb-1">
-            <label class="form-label small mb-0">Domain Regex</label>
+            <label class="form-label small mb-0">域名正则</label>
             <input type="text" class="form-control form-control-sm" id="edit-scheme-regex">
           </div>
           <div class="mb-1">
-            <label class="form-label small mb-0">Description</label>
+            <label class="form-label small mb-0">描述</label>
             <input type="text" class="form-control form-control-sm" id="edit-scheme-desc">
           </div>
           <div class="mb-1">
-            <label class="form-label small mb-0">Associated Fields</label>
+            <label class="form-label small mb-0">关联字段</label>
             <div class="dual-list-selector d-flex gap-1" id="scheme-field-selector" style="height:160px">
               <!-- Left: Available fields -->
               <div class="flex-grow-1 d-flex flex-column border rounded overflow-hidden">
-                <div class="px-1 py-0 bg-light border-bottom small fw-bold">Available</div>
+                <div class="px-1 py-0 bg-light border-bottom small fw-bold">可用</div>
                 <select multiple class="form-select form-select-sm flex-grow-1 border-0 rounded-0"
                         id="available-fields-list" style="font-size:11px"></select>
               </div>
               <!-- Center: Action buttons -->
               <div class="d-flex flex-column justify-content-center gap-1">
-                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" id="field-move-right" title="Add selected">&gt;</button>
-                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" id="field-move-left" title="Remove selected">&lt;</button>
-                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" id="field-move-all-right" title="Add all">&gt;&gt;</button>
-                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" id="field-move-all-left" title="Remove all">&lt;&lt;</button>
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" id="field-move-right" title="添加选中项"><i class="bi bi-chevron-right"></i></button>
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" id="field-move-left" title="移除选中项"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" id="field-move-all-right" title="全部添加"><i class="bi bi-chevron-double-right"></i></button>
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" id="field-move-all-left" title="全部移除"><i class="bi bi-chevron-double-left"></i></button>
               </div>
               <!-- Right: Selected fields -->
               <div class="flex-grow-1 d-flex flex-column border rounded overflow-hidden">
-                <div class="px-1 py-0 bg-light border-bottom small fw-bold">Selected</div>
+                <div class="px-1 py-0 bg-light border-bottom small fw-bold">已选</div>
                 <select multiple class="form-select form-select-sm flex-grow-1 border-0 rounded-0"
                         id="selected-fields-list" style="font-size:11px"></select>
               </div>
@@ -399,8 +400,8 @@
           </div>
         </div>
         <div class="modal-footer py-1 px-2">
-          <button class="btn btn-sm btn-secondary py-0" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-sm btn-primary py-0" id="save-scheme-btn">Save</button>
+          <button class="btn btn-sm btn-secondary py-0" data-bs-dismiss="modal">取消</button>
+          <button class="btn btn-sm btn-primary py-0" id="save-scheme-btn">保存</button>
         </div>
       </div>
     </div>
@@ -411,15 +412,15 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content">
         <div class="modal-header py-1 px-2">
-          <h6 class="modal-title small fw-bold">Edit Note</h6>
+          <h6 class="modal-title small fw-bold">编辑备注</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-2">
-          <textarea class="form-control form-control-sm" id="edit-note-text" rows="3" placeholder="Add a note for this request..."></textarea>
+          <textarea class="form-control form-control-sm" id="edit-note-text" rows="3" placeholder="为此请求添加备注..."></textarea>
         </div>
         <div class="modal-footer py-1 px-2">
-          <button class="btn btn-sm btn-secondary py-0" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-sm btn-primary py-0" id="save-note-btn">Save</button>
+          <button class="btn btn-sm btn-secondary py-0" data-bs-dismiss="modal">取消</button>
+          <button class="btn btn-sm btn-primary py-0" id="save-note-btn">保存</button>
         </div>
       </div>
     </div>

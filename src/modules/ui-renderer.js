@@ -20,9 +20,9 @@ const UiRenderer = {
       const total = totalRequests !== undefined ? totalRequests : requests.length;
       const filtered = requests.length;
       if (total !== filtered) {
-        $count.text(filtered + '/' + total + ' requests');
+        $count.text(filtered + '/' + total + ' 个请求');
       } else {
-        $count.text(filtered + ' request' + (filtered !== 1 ? 's' : ''));
+        $count.text(filtered + ' 个请求');
       }
     }
 
@@ -35,7 +35,7 @@ const UiRenderer = {
     $tbody.empty();
     if (requests.length === 0) {
       const colCount = $ths.length;
-      $tbody.append(`<tr><td colspan="${colCount}" class="text-center text-muted py-3">No requests captured yet.<br>Reload the page or trigger network activity.</td></tr>`);
+      $tbody.append(`<tr><td colspan="${colCount}" class="text-center text-muted py-3">尚未捕获请求。<br>刷新页面或触发网络活动。</td></tr>`);
       return;
     }
 
@@ -188,7 +188,7 @@ const UiRenderer = {
         $code.removeClass();
         $code.addClass(`hljs language-${lang}`);
         // Apply highlight.js
-        if (window.hljs && text && text !== 'Loading...') {
+        if (window.hljs && text && text !== '加载中...') {
           try {
             window.hljs.highlightElement($code[0]);
           } catch (e) {
@@ -226,9 +226,9 @@ const UiRenderer = {
   },
 
   showLoading(pane) {
-    this.updatePaneContent(pane, 'raw', 'Loading...');
-    this.updatePaneContent(pane, 'pretty', { content: 'Loading...', language: 'plaintext' });
-    this.updatePaneContent(pane, 'hex', 'Loading...');
+    this.updatePaneContent(pane, 'raw', '加载中...');
+    this.updatePaneContent(pane, 'pretty', { content: '加载中...', language: 'plaintext' });
+    this.updatePaneContent(pane, 'hex', '加载中...');
   }
 };
 

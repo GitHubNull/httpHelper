@@ -484,3 +484,39 @@ th.sort-desc .sort-indicator::after {
   .btn-close { filter: invert(1); }
   .dual-list-selector .bg-light { background: var(--bs-dark) !important; color: var(--bs-light); }
 }
+
+/* === Bootstrap Icons Button Styling === */
+.toolbar .btn i.bi,
+.layout-bar .btn i.bi,
+.pane-actions .btn i.bi,
+.filter-bar .btn i.bi,
+.filter-bar-advanced .btn i.bi,
+.pane-search-bar .btn i.bi,
+.tab-pane-switcher .btn i.bi,
+#scheme-field-selector .btn i.bi {
+  font-size: 13px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Search input icon inherits font-size from parent .search-input-icon */
+.pane-search-bar .search-input-icon i.bi {
+  line-height: 1;
+}
+
+/* Dual list selector button icons */
+#scheme-field-selector .btn i.bi {
+  font-size: 12px;
+}
+
+/* Vertical layout icon rotation */
+.icon-rotate-90 {
+  display: inline-block;
+  transform: rotate(90deg);
+}
+
+/* Recording button: icon-only, keep dot centered */
+.btn-recording {
+  min-width: 28px;
+  justify-content: center;
+}

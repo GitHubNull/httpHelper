@@ -6,13 +6,13 @@ const ClipboardUtils = {
   copyText(text, msg) {
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
-      this.showToast(msg || 'Copied!');
+      this.showToast(msg || '已复制！');
     }).catch(() => {
       const $ta = $('<textarea>').val(text).appendTo('body');
       $ta[0].select();
       document.execCommand('copy');
       $ta.remove();
-      this.showToast(msg || 'Copied!');
+      this.showToast(msg || '已复制！');
     });
   },
 
@@ -24,7 +24,7 @@ const ClipboardUtils = {
     $a[0].click();
     $a.remove();
     URL.revokeObjectURL(url);
-    this.showToast(filename + ' downloaded!');
+    this.showToast(filename + ' 已下载！');
   },
 
   showToast(msg, duration = 2000) {

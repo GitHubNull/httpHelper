@@ -96,11 +96,11 @@ import StringUtils from './utils/string-utils.js';
   // Copy / Download
   $('#copy-req').on('click', () => {
     const text = getPaneText('request', UiRenderer.getActiveTab('request'));
-    ClipboardUtils.copyText(text, 'Request copied!');
+    ClipboardUtils.copyText(text, '请求已复制！');
   });
   $('#copy-res').on('click', () => {
     const text = getPaneText('response', UiRenderer.getActiveTab('response'));
-    ClipboardUtils.copyText(text, 'Response copied!');
+    ClipboardUtils.copyText(text, '响应已复制！');
   });
   $('#download-req').on('click', () => {
     const req = currentRequest;
@@ -120,21 +120,21 @@ import StringUtils from './utils/string-utils.js';
     if (!currentRequest) return;
     const raw = ContentFormatter.buildRawRequest(currentRequest.request);
     const headers = raw.split('\r\n\r\n')[0];
-    ClipboardUtils.copyText(headers, 'Request headers copied!');
+    ClipboardUtils.copyText(headers, '请求头已复制！');
   });
   $('#copy-res-headers').on('click', () => {
     if (!currentRequest) return;
     const raw = ContentFormatter.buildRawResponse(currentRequest.response, currentResponseBody);
     const headers = raw.split('\r\n\r\n')[0];
-    ClipboardUtils.copyText(headers, 'Response headers copied!');
+    ClipboardUtils.copyText(headers, '响应头已复制！');
   });
   $('#copy-req-body').on('click', () => {
     if (!currentRequest) return;
     const body = currentRequest.request.postData ? currentRequest.request.postData.text : '';
-    ClipboardUtils.copyText(body || '', body ? 'Request body copied!' : 'No body');
+    ClipboardUtils.copyText(body || '', body ? '请求体已复制！' : '无主体内容');
   });
   $('#copy-res-body').on('click', () => {
-    ClipboardUtils.copyText(currentResponseBody || '', currentResponseBody ? 'Response body copied!' : 'No body');
+    ClipboardUtils.copyText(currentResponseBody || '', currentResponseBody ? '响应体已复制！' : '无主体内容');
   });
 
   // Clear
@@ -161,7 +161,7 @@ import StringUtils from './utils/string-utils.js';
   // Copy Session (in pane headers)
   $(document).on('click', '.copy-session-btn', async () => {
     if (!activeScheme || !currentRequest) {
-      ClipboardUtils.showToast('No active scheme or request');
+      ClipboardUtils.showToast('无激活方案或请求');
       return;
     }
     if (!activeScheme.fields) {
@@ -170,9 +170,9 @@ import StringUtils from './utils/string-utils.js';
     const result = SessionExtractor.applySchemeToRequest(currentRequest, activeScheme);
     if (result) {
       const text = Object.entries(result).map(([k, v]) => `${k}: ${v}`).join('\n');
-      ClipboardUtils.copyText(text, 'Session copied!');
+      ClipboardUtils.copyText(text, '会话已复制！');
     } else {
-      ClipboardUtils.showToast('No session data extracted');
+      ClipboardUtils.showToast('未提取到会话数据');
     }
   });
 
@@ -181,7 +181,7 @@ import StringUtils from './utils/string-utils.js';
     const name = $('#edit-field-name').val().trim();
     const pattern = $('#edit-field-pattern').val().trim();
     if (!name || !pattern) {
-      ClipboardUtils.showToast('Name and pattern are required');
+      ClipboardUtils.showToast('名称和匹配规则为必填项');
       return;
     }
     const field = {
@@ -208,7 +208,7 @@ import StringUtils from './utils/string-utils.js';
   // Save Scheme (modal) - with fieldIds from dual-list selector
   $('#save-scheme-btn').on('click', async () => {
     const name = $('#edit-scheme-name').val().trim();
-    if (!name) { ClipboardUtils.showToast('Scheme name is required'); return; }
+    if (!name) { ClipboardUtils.showToast('方案名称为必填项'); return; }
     const domains = $('#edit-scheme-domains').val().split(',').map(s => s.trim()).filter(Boolean);
     // Collect selected fieldIds from right-side list
     const fieldIds = [];
@@ -363,9 +363,9 @@ import StringUtils from './utils/string-utils.js';
     UiRenderer.updatePaneContent('request', 'hex', hexReqText);
 
     // Response loading
-    UiRenderer.updatePaneContent('response', 'raw', 'Loading...');
-    UiRenderer.updatePaneContent('response', 'pretty', { content: 'Loading...', language: 'plaintext' });
-    UiRenderer.updatePaneContent('response', 'hex', 'Loading...');
+    UiRenderer.updatePaneContent('response', 'raw', '加载中...');
+    UiRenderer.updatePaneContent('response', 'pretty', { content: '加载中...', language: 'plaintext' });
+    UiRenderer.updatePaneContent('response', 'hex', '加载中...');
 
     request.getContent((body) => {
       currentResponseBody = body || '';
@@ -446,7 +446,7 @@ import StringUtils from './utils/string-utils.js';
       { key: 'mode', render: (row) => `<span class="badge bg-secondary">${row.mode}</span>` },
       { key: 'pattern', render: (row) => `<code class="small">${escapeHtml(row.pattern || '')}</code>` },
       { key: 'usedBy', render: (row) => row.usedByNames.length > 0 ? escapeHtml(row.usedByNames.join(', ')) : '<span class="text-muted">-</span>' },
-      { key: 'actions', render: (row) => `<button class="btn btn-sm btn-outline-primary py-0 px-1 edit-field-btn" data-id="${row.id}">Edit</button> <button class="btn btn-sm btn-outline-danger py-0 px-1 delete-field-btn" data-id="${row.id}">Del</button>` }
+      { key: 'actions', render: (row) => `<button class="btn btn-sm btn-outline-primary py-0 px-1 edit-field-btn" data-id="${row.id}" title="编辑"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger py-0 px-1 delete-field-btn" data-id="${row.id}" title="删除"><i class="bi bi-trash"></i></button>` }
     ];
     TableManager.renderTableBody($('#fields-table'), columns, filteredFields, {});
   }
@@ -469,7 +469,7 @@ import StringUtils from './utils/string-utils.js';
       { key: 'regex', render: (row) => `<code class="small">${escapeHtml(row.domainRegex || '')}</code>` },
       { key: 'description', render: (row) => escapeHtml(row.description || '') },
       { key: 'fieldCount', render: (row) => (row.fieldIds || []).length },
-      { key: 'actions', render: (row) => `<button class="btn btn-sm btn-outline-primary py-0 px-1 edit-scheme-btn" data-id="${row.id}">Edit</button> <button class="btn btn-sm btn-outline-danger py-0 px-1 delete-scheme-btn" data-id="${row.id}">Del</button>` }
+      { key: 'actions', render: (row) => `<button class="btn btn-sm btn-outline-primary py-0 px-1 edit-scheme-btn" data-id="${row.id}" title="编辑"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger py-0 px-1 delete-scheme-btn" data-id="${row.id}" title="删除"><i class="bi bi-trash"></i></button>` }
     ];
     TableManager.renderTableBody($('#schemes-table'), columns, filteredSchemes, {});
   }
@@ -547,9 +547,9 @@ import StringUtils from './utils/string-utils.js';
     if (!$count.length) return;
     const state = paneSearchState[prefix];
     if (state.matches.length > 0 && state.currentIndex >= 0) {
-      $count.text(`${state.currentIndex + 1}/${state.matches.length} highlights`);
+      $count.text(`${state.currentIndex + 1}/${state.matches.length} 个高亮`);
     } else {
-      $count.text('0 highlights');
+      $count.text('0 个高亮');
     }
   }
 
@@ -599,9 +599,9 @@ import StringUtils from './utils/string-utils.js';
     function updateSearchIcon() {
       const hasText = $input.val().length > 0;
       if (hasText) {
-        $icon.html('&#10005;').attr('title', 'Clear').removeClass('search-icon-state').addClass('search-clear-state');
+        $icon.html('<i class="bi bi-x-lg"></i>').attr('title', '清除').removeClass('search-icon-state').addClass('search-clear-state');
       } else {
-        $icon.html('&#128269;').attr('title', 'Search').removeClass('search-clear-state').addClass('search-icon-state');
+        $icon.html('<i class="bi bi-search"></i>').attr('title', '搜索').removeClass('search-clear-state').addClass('search-icon-state');
       }
     }
 
@@ -612,7 +612,7 @@ import StringUtils from './utils/string-utils.js';
       if (!text) {
         clearPaneHighlights(prefix);
         paneSearchState[prefix] = { matches: [], currentIndex: -1 };
-        $countEl.text('0 highlights');
+        $countEl.text('0 个高亮');
         return;
       }
       performPaneSearch(prefix, text, options);
@@ -624,7 +624,7 @@ import StringUtils from './utils/string-utils.js';
         $input.val('');
         clearPaneHighlights(prefix);
         paneSearchState[prefix] = { matches: [], currentIndex: -1 };
-        $countEl.text('0 highlights');
+        $countEl.text('0 个高亮');
         updateSearchIcon();
       }
     });
@@ -780,7 +780,7 @@ import StringUtils from './utils/string-utils.js';
     }
     const result = SessionExtractor.applySchemeToRequest(request, activeScheme);
     if (result) {
-      ClipboardUtils.showToast(`Session extracted: ${Object.keys(result).join(', ')}`, 3000);
+      ClipboardUtils.showToast(`会话已提取：${Object.keys(result).join(', ')}`, 3000);
     }
   }
 
@@ -963,12 +963,12 @@ import StringUtils from './utils/string-utils.js';
       const active = $(this).hasClass('active');
       if (active) {
         NetworkHandler.setRecording(false);
-        $(this).removeClass('active').attr('title', 'Resume recording');
-        ClipboardUtils.showToast('Recording paused');
+        $(this).removeClass('active').attr('title', '恢复录制');
+        ClipboardUtils.showToast('录制已暂停');
       } else {
         NetworkHandler.setRecording(true);
-        $(this).addClass('active').attr('title', 'Pause recording');
-        ClipboardUtils.showToast('Recording resumed');
+        $(this).addClass('active').attr('title', '暂停录制');
+        ClipboardUtils.showToast('录制已恢复');
       }
     });
   }
@@ -981,10 +981,10 @@ import StringUtils from './utils/string-utils.js';
       const isHidden = $row.hasClass('d-none');
       if (isHidden) {
         $row.removeClass('d-none').addClass('d-flex');
-        $(this).addClass('active').attr('title', 'Hide advanced filters');
+        $(this).addClass('active').attr('title', '隐藏高级过滤');
       } else {
         $row.removeClass('d-flex').addClass('d-none');
-        $(this).removeClass('active').attr('title', 'Show advanced filters');
+        $(this).removeClass('active').attr('title', '显示高级过滤');
       }
     });
     $('#filter-method').on('change', function () { filterState.method = $(this).val(); refreshTable(); });
@@ -1037,6 +1037,10 @@ import StringUtils from './utils/string-utils.js';
       red: '#dc3545', orange: '#fd7e14', yellow: '#ffc107', green: '#198754',
       blue: '#0d6efd', purple: '#6f42c1', pink: '#d63384', gray: '#6c757d'
     };
+    const colorNames = {
+      red: '红色', orange: '橙色', yellow: '黄色', green: '绿色',
+      blue: '蓝色', purple: '紫色', pink: '粉色', gray: '灰色'
+    };
     let $dropdown = null;
 
     $('#request-table').on('click', '.color-tag', function (e) {
@@ -1049,9 +1053,9 @@ import StringUtils from './utils/string-utils.js';
 
       $dropdown = $('<div class="color-picker-dropdown"></div>');
       colors.forEach(c => {
-        $dropdown.append(`<span class="swatch" style="background:${colorMap[c]}" data-color="${c}" title="${c}"></span>`);
+        $dropdown.append(`<span class="swatch" style="background:${colorMap[c]}" data-color="${c}" title="${colorNames[c] || c}"></span>`);
       });
-      $dropdown.append('<span class="swatch swatch-clear" data-color="" title="Clear tag">&times;</span>');
+      $dropdown.append('<span class="swatch swatch-clear" data-color="" title="清除标签">&times;</span>');
 
       const offset = $(this).offset();
       $dropdown.css({
