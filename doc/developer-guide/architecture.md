@@ -70,11 +70,12 @@ selectionStore.selectRequest(request)
 ### Store 间依赖关系
 
 ```
-network ← filter (过滤依赖请求列表)
-network ← selection (选择依赖请求)
-filter  ← selection (选择更新触发刷新)
-network ← session (会话提取依赖请求)
-selection ← search (高亮依赖面板内容)
+network  ← filter     (过滤读取请求列表和 requestMeta)
+network  ← selection  (选择读取请求数据)
+filter   ← selection  (selectRequest 调用 setSelectedUid 更新选中索引)
+network  ← session    (会话提取依赖请求数据)
+selection ← search    (搜索高亮依赖面板内容)
+filter   ← network    (refreshDisplay 调用 getRequestMeta 用于颜色过滤)
 ```
 
 ## 组件架构
@@ -83,35 +84,42 @@ selection ← search (高亮依赖面板内容)
 
 ```
 App.vue
-├── ToolbarBar.vue              # 顶部工具栏（录制开关、清空、布局切换）
+├── ToolbarBar.vue              # 顶部工具栏（录制切换+脉冲动画、清空、请求计数）
 ├── Tabs (PrimeVue)
 │   ├── TabPanel: HTTP 历史
 │   │   └── HttpHistoryTab.vue
-│   │       ├── FilterBar.vue           # 基础过滤
-│   │       ├── FilterBarAdvanced.vue   # 高级过滤
 │   │       ├── RequestTableArea.vue
-│   │       │   ├── RequestTable.vue    # PrimeVue DataTable
-│   │       │   └── ColumnConfig.vue     # 列配置
+│   │       │   ├── FilterBar.vue           # 基础过滤 + 全屏按钮
+│   │       │   ├── RequestTable.vue       # PrimeVue DataTable（内联列配置 Popover + ColorPicker）
+│   │       │   └── FullscreenOverlay.vue  # 请求列表面板全屏
+│   │       ├── PaneResizer.vue            # 水平拖拽分隔条
 │   │       └── HttpDetailArea.vue
-│   │           ├── RequestPane.vue
-│   │           │   ├── ContentPanes.vue (Raw/Pretty/Hex)
+│   │           ├── LayoutBar.vue          # 布局切换 + 全屏按钮
+│   │           ├── ContentPanes.vue       # 布局容器（vertical/horizontal/tabs）
+│   │           │   ├── RequestPane.vue
 │   │           │   │   ├── RawView.vue
 │   │           │   │   ├── PrettyView.vue
-│   │           │   │   └── HexView.vue
-│   │           │   └── SearchBar.vue
-│   │           ├── ResponsePane.vue
-│   │           │   ├── ContentPanes.vue
-│   │           │   └── SearchBar.vue
-│   │           └── PaneResizer.vue
-│   └── TabPanel: 会话配置
+│   │           │   │   ├── HexView.vue
+│   │           │   │   └── SearchBar.vue   # 搜索高亮栏
+│   │           │   ├── PaneResizer.vue    # 垂直/水平拖拽分隔条
+│   │           │   └── ResponsePane.vue
+│   │           │       ├── RawView.vue
+│   │           │       ├── PrettyView.vue
+│   │           │       ├── HexView.vue
+│   │           │       └── SearchBar.vue
+│   │           └── FullscreenOverlay.vue  # 报文详情面板全屏
+│   └── TabPanel: 会话复制配置
 │       └── SessionConfigTab.vue
-│           ├── SchemesManagement.vue
-│           ├── FieldsManagement.vue
-│           ├── SchemeEditorDialog.vue
-│           ├── FieldEditorDialog.vue
-│           └── NoteEditorDialog.vue
-├── FullscreenOverlay.vue      # 全屏覆盖层
-└── Toast (PrimeVue)           # 操作反馈通知
+│           ├── Tabs (PrimeVue)
+│           │   ├── TabPanel: 字段管理
+│           │   │   └── FieldsManagement.vue
+│           │   └── TabPanel: 方案管理
+│           │       └── SchemesManagement.vue
+│           └── FullscreenOverlay.vue      # 会话配置面板全屏（可选）
+├── FieldEditorDialog.vue       # 字段编辑对话框（全局渲染）
+├── SchemeEditorDialog.vue      # 方案编辑对话框（含 DualListSelector）
+├── NoteEditorDialog.vue        # 备注编辑对话框（全局渲染）
+└── Toast (PrimeVue)            # 操作反馈通知
 ```
 
 ## 构建与部署
@@ -128,15 +136,26 @@ App.vue
 ```typescript
 // vite.config.ts 核心配置
 {
-  root: 'src',           // Vite 项目根目录
-  base: './',            // 相对路径（Chrome 扩展必需）
+  root: 'src',               // Vite 项目根目录
+  base: './',                // 相对路径（Chrome 扩展必需）
   build: {
-    outDir: '../dist',   // 输出到 dist/
+    outDir: '../dist',       // 输出到 dist/
     emptyOutDir: true,
+    minify: false,           // 不压缩（便于调试）
+    sourcemap: true,         // 生成 sourcemap
+    rollupOptions: {
+      input: { panel: resolve(__dirname, 'src/panel.html') },
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]'
+      }
+    }
   },
   resolve: {
-    alias: { '@': 'src/src' }  // Vue 源码路径别名
-  }
+    alias: { '@': resolve(__dirname, 'src/src') }  // Vue 源码路径别名
+  },
+  plugins: [vue(), crx({ manifest })]
 }
 ```
 
@@ -168,3 +187,6 @@ App.vue
 - `chrome.storage.local` 异步读写，不阻塞主线程
 - Vue 响应式系统自动优化 DOM 更新，仅重渲染变更部分
 - PrimeVue DataTable 虚拟滚动支持大量数据
+- 全屏模式使用 Vue Teleport + FullscreenOverlay 组件，支持 ESC 栈式退出
+- 面板拖拽通过 `useResize` composable 实时计算比例，使用 CSS flex 布局
+- 会话数据迁移（`migrateIfNeeded`）仅在首次加载时执行一次

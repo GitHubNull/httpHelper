@@ -88,6 +88,14 @@ httpHelper/
 - 构建工具: Vite 6 + @crxjs/vite-plugin
 - 代码高亮: highlight.js
 
+## 开发指南
+
+开发维护指导文档请参阅 [开发者指南](doc/developer-guide/index.md)。
+
+## 变更日志
+
+查看项目的完整变更记录请参阅 [变更日志](doc/CHANGELOG.md)。
+
 ## 许可证
 
 本项目采用 [MIT License](LICENSE) 开源协议。

@@ -28,7 +28,7 @@
 - 遵循现有代码风格（缩进、命名、注释）
 - 新增模块需同步更新 `AGENTS.md` 和 `README.md` 的项目结构
 - 新增功能需同步更新 `doc/usage-guide.md`
-- 避免引入新的外部依赖（如需引入，放入 `src/third_lib/`）
+- 避免引入新的外部依赖（如需引入，通过 `pnpm add` 安装并在 `main.ts` 或对应组件中导入）
 
 ### 测试要求
 
@@ -44,6 +44,25 @@ PR 将由维护者审查，可能要求：
 - 修改代码以符合规范
 - 补充文档或注释
 - 调整实现方式以保持一致性
+
+## 文档同步检查清单
+
+提交 PR 时，请检查以下文档是否需要同步更新：
+
+| 变更类型 | 需更新的文档 |
+|----------|-------------|
+| 新增/修改 Pinia store | `module-api.md` + `AGENTS.md` |
+| 新增/修改 composable | `module-api.md` + `AGENTS.md` |
+| 新增/修改 service | `module-api.md` + `AGENTS.md` |
+| 新增/修改 utils 函数 | `module-api.md` + `AGENTS.md` |
+| 新增/修改组件 | `architecture.md` 组件树 + `AGENTS.md` |
+| 新增/修改类型定义 | `module-api.md` 类型定义章节 |
+| 功能变更（用户可见） | `usage-guide.md` |
+| 版本号变更 | `package.json` + `src/manifest.json` + 根目录 `manifest.json` + `CHANGELOG.md` |
+
+> **注意**：`AGENTS.md` 是 AI 智能体的项目指南，需与实际代码保持同步。
+
+---
 
 ## 联系方式
 

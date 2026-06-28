@@ -15,24 +15,41 @@
 
 ### 前置要求
 
+- Node.js 18+（推荐 LTS 版本）
+- pnpm（包管理器）
 - Chrome 浏览器 88+（支持 Manifest V3）
-- 任意代码编辑器（推荐 VS Code）
+- 代码编辑器（推荐 VS Code + Volar 插件）
 - Git（版本管理）
+
+### 安装与构建
+
+```bash
+# 安装依赖
+pnpm install
+
+# 开发模式（带 HMR 热更新）
+pnpm dev
+
+# 生产构建
+pnpm build
+```
 
 ### 本地加载开发
 
 1. 克隆项目到本地
-2. 打开 Chrome，访问 `chrome://extensions/`
-3. 开启右上角 **开发者模式**
-4. 点击 **加载已解压的扩展程序**
-5. 选择项目根目录（包含 `manifest.json` 的文件夹）
-6. 在 DevTools 中找到 **http helper** 面板即可开始调试
+2. 执行 `pnpm install && pnpm build`
+3. 打开 Chrome，访问 `chrome://extensions/`
+4. 开启右上角 **开发者模式**
+5. 点击 **加载已解压的扩展程序**
+6. 选择项目根目录（包含 `manifest.json` 的文件夹）
+7. 在 DevTools 中找到 **http helper** 面板即可开始调试
 
 ### 热重载
 
-修改源码后，在 `chrome://extensions/` 页面点击扩展卡片的 **刷新** 按钮（圆形箭头图标）即可重新加载。
+- **开发模式**：执行 `pnpm dev` 启动 Vite 开发服务器，支持 HMR 热更新
+- **生产构建**：修改源码后执行 `pnpm build`，然后在 `chrome://extensions/` 点击扩展卡片的 **刷新** 按钮
 
-> 注意：修改 `manifest.json` 后需要点击 **刷新** 才能生效；修改 JS/CSS/HTML 文件后，关闭并重新打开 DevTools 面板即可看到更新。
+> 注意：修改 `manifest.json` 后需要点击 **刷新** 才能生效；修改 Vue/TS 文件后，关闭并重新打开 DevTools 面板即可看到更新。
 
 ---
 
@@ -42,93 +59,159 @@
 
 ```
 httpHelper/
-├── src/                        # 源码目录
-│   ├── manifest.json           # 扩展清单
-│   ├── devtools.html           # DevTools 入口页
-│   ├── devtools.js             # 注册 DevTools 面板
-│   ├── panel.html              # 主面板 HTML
-│   ├── panel.js                # 主入口模块（模块协调）
-│   ├── panel.css               # 主面板样式
-│   ├── third_lib/              # 第三方依赖（Bootstrap 5.3.8, jQuery 4.0.0）
-│   ├── modules/                # 功能模块
-│   │   ├── network-handler.js      # 网络请求捕获
-│   │   ├── content-formatter.js    # 报文格式化
-│   │   ├── ui-renderer.js          # UI 渲染
-│   │   ├── layout-manager.js       # 布局管理
-│   │   ├── search-highlighter.js   # 搜索高亮
-│   │   ├── session-extractor.js    # 会话提取逻辑
-│   │   └── session-storage.js      # 会话持久化存储
-│   └── utils/                  # 通用工具模块
-│       ├── clipboard-utils.js  # 剪贴板与下载
-│       ├── dom-utils.js        # DOM 工具
-│       └── string-utils.js     # 字符串处理
+├── src/                        # Vite 项目根目录
+│   ├── manifest.json           # 扩展清单（@crxjs 构建用）
+│   ├── panel.html              # 面板入口 HTML
+│   ├── devtools.html           # DevTools 入口 HTML
+│   └── src/                    # Vue 3 源码目录
+│       ├── App.vue             # 根组件（Tab 布局、全屏覆盖层）
+│       ├── main.ts             # 应用入口（Pinia、PrimeVue、highlight.js 初始化）
+│       ├── devtools.ts         # DevTools 面板注册
+│       ├── components/         # Vue 组件目录
+│       │   ├── http-history/   # HTTP 历史功能组件（14 个）
+│       │   ├── session-config/ # 会话配置功能组件（7 个）
+│       │   ├── toolbar/        # 工具栏组件（1 个）
+│       │   └── common/         # 通用组件（4 个）
+│       ├── composables/        # 组合式 API（4 个）
+│       ├── services/           # 业务服务（会话提取/存储）
+│       ├── stores/             # Pinia 状态管理（5 个 store）
+│       ├── utils/              # 工具函数（4 个模块）
+│       ├── types/              # TypeScript 类型定义
+│       └── styles/             # 全局样式
+├── dist/                       # 构建输出目录
 ├── doc/                        # 文档目录
-│   ├── usage-guide.md          # 用户使用教程
-│   ├── developer-guide/        # 开发者文档
-│   │   ├── index.md            # 本文件
-│   │   ├── architecture.md     # 架构设计文档
-│   │   ├── module-api.md       # 模块 API 参考
-│   │   └── contributing.md     # 贡献指南
-│   └── CHANGELOG.md            # 变更日志
+├── vite.config.ts              # Vite 构建配置
+├── tsconfig.json               # TypeScript 配置
+├── package.json                # 项目依赖与脚本
+├── manifest.json               # 扩展清单（加载用，指向 dist/）
 ├── README.md                   # 项目说明
 └── AGENTS.md                   # 智能体开发指南
 ```
 
+> 完整的模块说明和组件层次请参阅 [架构设计文档](architecture.md) 和 [AGENTS.md](../../AGENTS.md)。
+
 ### 模块依赖关系
 
 ```
-panel.js (入口)
-  ├── NetworkHandler ──→ chrome.devtools.network
-  ├── ContentFormatter
-  ├── UiRenderer ──────→ LayoutManager
-  ├── LayoutManager
-  ├── SearchHighlighter
-  ├── SessionExtractor ──→ SessionStorage
-  ├── ClipboardUtils
-  ├── DomUtils
-  └── StringUtils
+main.ts (应用入口)
+  ├── PrimeVue (UI 框架)
+  ├── Pinia (状态管理)
+  │   ├── networkStore ──→ chrome.devtools.network
+  │   ├── filterStore ──→ networkStore (过滤读取请求和元数据)
+  │   ├── selectionStore ──→ filterStore (选择同步选中索引)
+  │   ├── sessionStore ──→ session-extractor / session-storage
+  │   └── searchStore ──→ selectionStore (读取面板内容)
+  ├── useNetworkListener (composable)
+  │   └── 初始化网络监听 + 会话提取检查
+  └── App.vue (根组件)
+      ├── ToolbarBar.vue
+      ├── HttpHistoryTab.vue
+      └── SessionConfigTab.vue
 ```
 
-所有模块通过 ES Module `import`/`export` 导入导出，无循环依赖。
+> API 详细签名请参阅 [模块 API 参考](module-api.md)。
 
 ---
 
 ## 模块开发规范
 
-### 创建新模块
+### 创建新组件
 
-1. 在 `src/modules/` 或 `src/utils/` 中创建新的 `.js` 文件
-2. 使用默认导出：`export default class MyModule { ... }`
-3. 在 `panel.js` 中导入：`import MyModule from './modules/my-module.js'`
-4. 在 `panel.js` 的初始化逻辑中调用模块方法
+1. 在 `src/src/components/` 对应子目录中创建 `.vue` 文件
+2. 使用三段式结构：`<template>` → `<script lang="ts" setup>` → `<style scoped>`
+3. 在父组件中导入使用
+4. 如需状态管理，在对应 Pinia store 中添加 action
+
+```vue
+<template>
+    <!-- 模板内容，4 空格缩进 -->
+</template>
+
+<script lang="ts" setup>
+import { ref, computed } from 'vue'
+// 业务逻辑
+</script>
+
+<style scoped>
+/* 组件样式 */
+</style>
+```
+
+### 创建新 Pinia Store
+
+1. 在 `src/src/stores/` 中创建 `.ts` 文件
+2. 使用 Options API 风格（`state` / `getters` / `actions`）
+3. 在组件中通过 `useXxxStore()` 获取实例
+
+```typescript
+import { defineStore } from 'pinia'
+
+export const useXxxStore = defineStore('xxx', {
+    state: () => ({
+        // 状态
+    }),
+    getters: {
+        // 计算属性
+    },
+    actions: {
+        // 方法
+    }
+})
+```
+
+### 创建新 Composable
+
+1. 在 `src/src/composables/` 中创建 `.ts` 文件
+2. 导出 `useXxx` 函数，返回响应式状态和方法
+
+### 创建新 Service
+
+1. 在 `src/src/services/` 中创建 `.ts` 文件
+2. 导出纯函数，不依赖 Vue 响应式系统
+3. 在 store 的 actions 中调用
 
 ### 命名规范
 
 | 类型 | 规范 | 示例 |
 |------|------|------|
-| 文件 | kebab-case | `network-handler.js` |
-| 类名 | PascalCase | `NetworkHandler` |
-| 方法 | camelCase | `initNetworkListener()` |
+| Vue 组件文件 | PascalCase | `RequestTable.vue` |
+| TS 模块文件 | kebab-case | `session-extractor.ts` |
+| 目录名 | kebab-case | `http-history/` |
+| 组件名 | PascalCase | `RequestTable` |
+| Store | camelCase + `Store` 后缀 | `useNetworkStore` |
+| Composable | `use` 前缀 + PascalCase | `useSearchHighlight` |
+| 方法 | camelCase | `selectRequest()` |
 | 常量 | UPPER_SNAKE_CASE | `MAX_REQUESTS` |
-| 私有方法 | 下划线前缀 | `_privateMethod()` |
+| 类型/接口 | PascalCase | `HarEntry` |
 
 ### 编码规范
 
-- 使用 ES Module 组织代码，模块职责单一
-- `panel.js` 使用 IIFE 包裹，避免全局污染
+- 使用 TypeScript 严格模式（`strict: true`）
+- Vue 组件使用 `<script setup>` 语法
+- Pinia store 采用 Options API 风格（`state`/`getters`/`actions`）
+- 路径别名 `@` 映射到 `src/src/`
 - 字符串拼接原生报文时使用 `\r\n` 作为 HTTP 行分隔符
 - 所有 DOM 操作前检查元素存在性
 - 异步操作（如 `getContent`）有 loading 状态提示
-- 优先使用原生 API，减少对 jQuery 的依赖（jQuery 仅用于 Bootstrap 组件）
+- PrimeVue 组件按需引入，未使用全局注册全部组件
 
 ### 错误处理
 
-```javascript
+```typescript
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
+
 try {
-  // 操作
+    // 异步操作
 } catch (err) {
-  console.error('[ModuleName] Error:', err);
-  showToast('操作失败: ' + err.message);
+    console.error('[ModuleName] Error:', err)
+    toast.add({
+        severity: 'error',
+        summary: '操作失败',
+        detail: String(err),
+        life: 3000
+    })
 }
 ```
 
@@ -145,10 +228,10 @@ try {
 
 ### 日志规范
 
-```javascript
-// 模块日志统一前缀
-console.log('[NetworkHandler] Request captured:', req.url);
-console.error('[SessionExtractor] Parse failed:', err);
+```typescript
+// 模块日志统一前缀（使用当前 store/service 名称）
+console.log('[networkStore] Request captured:', request._uid)
+console.error('[sessionExtractor] Parse failed:', err)
 ```
 
 ### 手动测试清单
@@ -166,6 +249,14 @@ console.error('[SessionExtractor] Parse failed:', err);
 - [ ] 搜索功能高亮和导航正常
 - [ ] 会话提取 Scheme 创建/激活/提取正常
 - [ ] 亮/暗主题切换正常
+- [ ] 颜色标记功能正常（8 色 + 清除）
+- [ ] 备注编辑功能正常
+- [ ] 高级过滤功能正常（类型/颜色/正则/大小写/反向）
+- [ ] 列配置功能正常（勾选可见列）
+- [ ] 全屏模式正常（各面板全屏 + ESC 退出）
+- [ ] 列头排序正常（三态：升序→降序→取消）
+- [ ] 面板拖拽调整大小正常
+- [ ] 录制暂停/恢复正常（脉冲动画指示）
 
 ---
 
@@ -181,12 +272,16 @@ console.error('[SessionExtractor] Parse failed:', err);
 
 ### 发布步骤
 
-1. 更新 `manifest.json` 中的 `version` 字段
+1. 同步版本号（三个文件必须一致）：
+   - `package.json` 中的 `version`
+   - `src/manifest.json` 中的 `version`
+   - 根目录 `manifest.json` 中的 `version`
 2. 更新 `doc/CHANGELOG.md`，记录本次变更
 3. 运行完整测试清单
-4. 打包扩展：`chrome://extensions/` → **打包扩展程序**
-5. 生成的 `.crx` 和 `.pem` 文件妥善保管
-6. 在 Git 中打标签：`git tag v1.x.x`
+4. 执行 `pnpm build` 重新构建
+5. 在 `chrome://extensions/` 点击 **刷新** 验证
+6. 在 Git 中打标签：`git tag v2.x.x`
+7. 推送标签：`git push origin v2.x.x`
 
 ---
 
@@ -194,37 +289,52 @@ console.error('[SessionExtractor] Parse failed:', err);
 
 ### Q1：修改代码后没有生效？
 
+- 确认执行了 `pnpm build` 重新构建
 - 确认在 `chrome://extensions/` 页面点击了 **刷新** 按钮
-- 确认修改的是正确的文件路径（注意 `src/` 前缀）
 - 关闭并重新打开 DevTools 面板
 
-### Q2：模块导入报错 `Cannot use import statement outside a module`？
+### Q2：TypeScript 编译报错？
 
-- 确认 `panel.html` 中 `<script>` 标签包含 `type="module"`
-- 确认文件路径正确（相对路径从 `panel.js` 出发）
+- 确认 `tsconfig.json` 中 `strict: true` 已启用
+- 检查类型导入是否使用 `import type` 语法
+- 确认路径别名 `@` 正确映射到 `src/src/`
 
-### Q3：Bootstrap 组件不工作？
+### Q3：PrimeVue 组件样式异常？
 
-- 确认 `panel.html` 中先引入 jQuery，再引入 Bootstrap JS
-- 确认 `bootstrap.bundle.min.js` 包含 Popper（用于 tooltip/dropdown）
+- 确认 `main.ts` 中正确配置了 `@primeuix/themes/aura` 主题预设
+- 确认 `darkModeSelector` 设置为 `@media (prefers-color-scheme: dark)`
+- 检查 `panel.css` 中的自定义样式是否覆盖了 PrimeVue 默认样式
 
 ### Q4：`chrome.storage.local` 数据读写失败？
 
-- 确认 `manifest.json` 中声明了 `"permissions": ["storage"]`（如需要）
+- 确认 `manifest.json` 中声明了 `"permissions": ["storage"]`
 - 检查存储配额是否超限（约 5MB）
-- 使用 `chrome.storage.local.get/set` 的回调或 Promise 处理异步结果
+- 使用 Promise 包装异步操作，避免回调地狱
 
 ### Q5：如何调试 session-extractor 的提取逻辑？
 
 在 Console 中手动测试：
 
-```javascript
-// 获取当前请求列表
-const requests = NetworkHandler.getRequests();
-const req = requests[0];
+```typescript
+// 获取 Pinia store 实例
+const sessionStore = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('session')
 
-// 测试 Scheme 提取
-const scheme = { name: 'Test', targetDomains: ['example.com'], fields: [...] };
-const result = SessionExtractor.extractSession(req, scheme);
-console.log(result);
+// 获取当前激活方案
+const scheme = sessionStore.activeScheme
+
+// 获取当前选中请求
+const selectionStore = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('selection')
+const request = selectionStore.currentRequest
+
+// 测试提取
+import { extractSession } from '@/services/session-extractor'
+const result = extractSession(request, scheme)
+console.log(result)
 ```
+
+### Q6：新增 PrimeVue 组件后如何使用？
+
+1. 在组件中按需导入：`import Button from 'primevue/button'`
+2. 在 `<script setup>` 中注册后即可在 `<template>` 中使用
+3. 如需全局注册，在 `main.ts` 中 `app.use()` 或 `app.component()`
+4. 参阅 [PrimeVue 官方文档](https://primevue.org/) 获取组件列表和用法

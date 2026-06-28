@@ -88,6 +88,14 @@ httpHelper/
 - Build tool: Vite 6 + @crxjs/vite-plugin
 - Syntax highlighting: highlight.js
 
+## Developer Guide
+
+For development and maintenance guidance, see the [Developer Guide](doc/developer-guide/index.md).
+
+## Changelog
+
+See the [Changelog](doc/CHANGELOG.md) for the complete list of changes.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
