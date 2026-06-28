@@ -24,7 +24,7 @@
                             :inputId="`col-vis-${col.field}`"
                         />
                         <label :for="`col-vis-${col.field}`" class="col-config-label">
-                            {{ col.header || '#' }}{{ col.mandatory ? ' *' : '' }}
+                            {{ col.header }}{{ col.mandatory ? ' *' : '' }}
                         </label>
                     </div>
                 </div>
@@ -150,10 +150,10 @@ const contextMenuRow = ref<HarEntry | null>(null)
 
 const allColumns = ref([
     { field: 'index', header: '#', sortable: true, width: '40px', visible: true, mandatory: true },
-    { field: 'color', header: '', sortable: true, width: '28px', visible: true, mandatory: true },
+    { field: 'color', header: '标签', sortable: true, width: '36px', visible: true },
     { field: 'method', header: '方法', sortable: true, width: '60px', visible: true },
     { field: 'host', header: '主机', sortable: true, width: '150px', visible: true },
-    { field: 'url', header: '路径', sortable: true, width: '300px', visible: true },
+    { field: 'url', header: '路径', sortable: true, width: '300px', visible: true, mandatory: true },
     { field: 'status', header: '状态', sortable: true, width: '50px', visible: true },
     { field: 'type', header: '类型', sortable: true, width: '60px', visible: true },
     { field: 'length', header: '长度', sortable: true, width: '60px', visible: true },
