@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-06-28 22:10:01
+
+### Fixed
+- 修复 CI 构建因图标文件未提交到仓库而失败的问题（`.gitignore` 添加 `src/public/icons/*.png` 例外规则）
+
 ## [2.3.0] - 2026-06-28 22:05:16
 
 ### Added

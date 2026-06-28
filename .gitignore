@@ -19,6 +19,9 @@ logs/
 *.bmp
 *.screenshot
 
+# Exception: keep Chrome extension icons
+!src/public/icons/*.png
+
 # OS generated files
 Thumbs.db
 .DS_Store
