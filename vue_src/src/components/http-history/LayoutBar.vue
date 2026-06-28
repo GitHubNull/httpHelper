@@ -24,6 +24,7 @@
             size="small"
             v-tooltip.top="'标签布局'"
         />
+        <slot />
     </div>
 </template>
 

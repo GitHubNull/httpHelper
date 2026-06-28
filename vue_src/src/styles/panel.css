@@ -338,3 +338,26 @@ mark.search-highlight-current {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--hh-text-muted);
 }
+
+/* === 全屏遮罩 (Fullscreen Overlay) === */
+.hh-fullscreen-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--hh-bg, #ffffff);
+    color: var(--hh-text, #212529);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 过渡动画（PrimeVue Dialog 风格：淡入 + 轻微缩放） */
+.hh-fs-enter-active,
+.hh-fs-leave-active {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.hh-fs-enter-from,
+.hh-fs-leave-to {
+    opacity: 0;
+    transform: scale(0.98);
+}

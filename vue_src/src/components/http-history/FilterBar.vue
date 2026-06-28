@@ -29,6 +29,13 @@
                 <i :class="keyword ? 'pi pi-times' : 'pi pi-search'"></i>
             </span>
         </div>
+        <Button
+            :icon="props.fullscreen ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
+            @click="emit('toggle-fullscreen')"
+            text
+            size="small"
+            v-tooltip.top="props.fullscreen ? '退出全屏' : '全屏显示'"
+        />
     </div>
     <FilterBarAdvanced v-if="selectionStore.showAdvancedFilter" />
 </template>
@@ -42,6 +49,9 @@ import FilterBarAdvanced from './FilterBarAdvanced.vue'
 import { useFilterStore } from '@/stores/filter'
 import { useSelectionStore } from '@/stores/selection'
 import { debounce } from '@/utils/dom-utils'
+
+const props = defineProps<{ fullscreen?: boolean }>()
+const emit = defineEmits<{ 'toggle-fullscreen': [] }>()
 
 const filterStore = useFilterStore()
 const selectionStore = useSelectionStore()

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-06-28
+
+### Added
+- 新增全屏查看功能，支持 Raw / Pretty / Hex 视图全屏展示
+- 新增 `FullscreenOverlay` 通用全屏覆盖组件与 `useFullscreenOverlay` 组合式函数
+- 新增 FilterBar 高级过滤面板，支持多条件组合筛选
+
+### Changed
+- 优化 RequestPane / ResponsePane 布局结构与交互体验
+- 优化 HttpDetailArea 与 RequestTableArea 的响应式适配
+- 优化 LayoutBar 布局切换按钮状态管理
+- 优化面板 CSS 样式，提升整体视觉一致性
+
 ## [2.0.1] - 2026-06-28
 
 ### Fixed

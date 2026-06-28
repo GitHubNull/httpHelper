@@ -8,7 +8,22 @@
             </TabList>
             <TabPanels class="flex-grow-1 overflow-hidden">
                 <TabPanel value="0" class="h-100 p-0">
-                    <HttpHistoryTab />
+                    <div class="position-relative h-100">
+                        <Button
+                            v-if="activeTab === '0' && !isFs0"
+                            class="fs-trigger-float"
+                            icon="pi pi-window-maximize"
+                            @click="isFs0 = true"
+                            text
+                            rounded
+                            size="small"
+                            v-tooltip.top="'HTTP 历史全屏'"
+                        />
+                        <Teleport :to="target0" :disabled="!isFs0">
+                            <HttpHistoryTab class="h-100" />
+                        </Teleport>
+                        <FullscreenOverlay v-model:visible="isFs0" title="HTTP 历史" ref="overlay0" />
+                    </div>
                 </TabPanel>
                 <TabPanel value="1" class="h-100 p-0">
                     <SessionConfigTab />
@@ -30,6 +45,9 @@ import SessionConfigTab from '@/components/session-config/SessionConfigTab.vue'
 import FieldEditorDialog from '@/components/session-config/FieldEditorDialog.vue'
 import SchemeEditorDialog from '@/components/session-config/SchemeEditorDialog.vue'
 import NoteEditorDialog from '@/components/session-config/NoteEditorDialog.vue'
+import FullscreenOverlay from '@/components/common/FullscreenOverlay.vue'
+import { useFullscreenOverlay } from '@/composables/useFullscreenOverlay'
+import Button from 'primevue/button'
 import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
@@ -44,6 +62,8 @@ const activeTab = ref('0')
 const { init } = useNetworkListener()
 const sessionStore = useSessionStore()
 const filterStore = useFilterStore()
+
+const { isFullscreen: isFs0, overlayRef: overlay0, target: target0 } = useFullscreenOverlay()
 
 onMounted(() => {
     init()
@@ -64,5 +84,12 @@ onMounted(() => {
 
 :deep(.p-tabpanel) {
     height: 100%;
+}
+
+.fs-trigger-float {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    z-index: 20;
 }
 </style>
