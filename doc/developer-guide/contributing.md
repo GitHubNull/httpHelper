@@ -58,7 +58,7 @@ PR 将由维护者审查，可能要求：
 | 新增/修改组件 | `architecture.md` 组件树 + `AGENTS.md` |
 | 新增/修改类型定义 | `module-api.md` 类型定义章节 |
 | 功能变更（用户可见） | `usage-guide.md` |
-| 版本号变更 | `package.json` + `src/manifest.json` + 根目录 `manifest.json` + `CHANGELOG.md` |
+| 版本号变更 | `package.json` + `src/manifest.json` + `CHANGELOG.md` |
 
 > **注意**：`AGENTS.md` 是 AI 智能体的项目指南，需与实际代码保持同步。
 
@@ -89,7 +89,6 @@ PR 将由维护者审查，可能要求：
 1. 确保以下文件版本号一致：
    - `package.json` 的 `version` 字段
    - `src/manifest.json` 的 `version` 字段
-   - 根目录 `manifest.json` 的 `version` 字段
 2. 在 `doc/CHANGELOG.md` 顶部添加新版本条目（遵循 Keep a Changelog 格式）
 3. 提交变更：`git commit -m "release: vX.Y.Z"`
 4. 创建并推送 tag：

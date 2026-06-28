@@ -41,7 +41,7 @@ pnpm build
 3. 打开 Chrome，访问 `chrome://extensions/`
 4. 开启右上角 **开发者模式**
 5. 点击 **加载已解压的扩展程序**
-6. 选择项目根目录（包含 `manifest.json` 的文件夹）
+6. 选择 `dist` 目录（构建输出目录）
 7. 在 DevTools 中找到 **http helper** 面板即可开始调试
 
 ### 热重载
@@ -83,7 +83,6 @@ httpHelper/
 ├── vite.config.ts              # Vite 构建配置
 ├── tsconfig.json               # TypeScript 配置
 ├── package.json                # 项目依赖与脚本
-├── manifest.json               # 扩展清单（加载用，指向 dist/）
 ├── README.md                   # 项目说明
 └── AGENTS.md                   # 智能体开发指南
 ```
@@ -272,10 +271,9 @@ console.error('[sessionExtractor] Parse failed:', err)
 
 ### 发布步骤
 
-1. 同步版本号（三个文件必须一致）：
+1. 同步版本号（两个文件必须一致）：
    - `package.json` 中的 `version`
    - `src/manifest.json` 中的 `version`
-   - 根目录 `manifest.json` 中的 `version`
 2. 更新 `doc/CHANGELOG.md`，记录本次变更
 3. 运行完整测试清单
 4. 执行 `pnpm build` 重新构建

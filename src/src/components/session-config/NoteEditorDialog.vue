@@ -6,14 +6,15 @@
         :style="{ width: '400px' }"
         :closeOnEscape="true"
         :draggable="false"
+        @show="onShow"
     >
         <div class="p-2">
             <Textarea
+                ref="noteTextareaRef"
                 v-model="noteText"
                 rows="4"
                 class="w-100"
                 placeholder="输入备注内容..."
-                autoFocus
             />
         </div>
         <template #footer>
@@ -33,7 +34,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
@@ -47,6 +48,13 @@ const filterStore = useFilterStore()
 
 const visible = ref(false)
 const noteText = ref('')
+const noteTextareaRef = ref<{ $el?: HTMLTextAreaElement } | null>(null)
+
+function onShow() {
+    nextTick(() => {
+        noteTextareaRef.value?.$el?.focus()
+    })
+}
 
 watch(() => selectionStore.editingNoteUid, (uid) => {
     if (uid !== null) {

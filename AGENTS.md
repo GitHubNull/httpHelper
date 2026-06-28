@@ -88,7 +88,6 @@ httpHelper/
 ├── tsconfig.json               # TypeScript 配置
 ├── tsconfig.node.json          # Node 环境 TypeScript 配置
 ├── package.json                # 项目依赖与脚本
-├── manifest.json               # 扩展清单（加载用，指向 dist/）
 ├── README.md                   # 项目说明（中文）
 ├── README.en.md                # 项目说明（英文）
 └── AGENTS.md                   # 本文件
@@ -96,17 +95,17 @@ httpHelper/
 
 ## 核心架构
 
-### 双 manifest 方案
+### Manifest 方案
 
-项目使用两个 manifest.json：
 - `src/manifest.json`：@crxjs 构建用清单，路径相对于 `src/` 目录
-- 根目录 `manifest.json`：Chrome 扩展加载用清单，路径指向 `dist/` 构建产物
+- `dist/manifest.json`：@crxjs 构建后自动生成，Chrome 加载用清单，路径相对于 `dist/` 目录
+- 构建后从 `dist/` 目录加载扩展
 
 ### 构建流程
 
 1. Vite 以 `src/` 为 root，`@crxjs/vite-plugin` 处理 Chrome 扩展 manifest
-2. 构建产物输出到 `dist/` 目录
-3. Chrome 加载根目录 `manifest.json`，其中所有路径指向 `dist/`
+2. 构建产物输出到 `dist/` 目录，@crxjs 自动生成 `dist/manifest.json`
+3. Chrome 从 `dist/` 目录加载扩展，使用 @crxjs 生成的 `dist/manifest.json`
 
 ### main.ts 应用入口
 
@@ -276,9 +275,10 @@ PrimeVue 主题通过 `@primeuix/themes/aura` 预设配置，暗色模式通过 
 
 ## 注意事项
 
-- 根目录 `manifest.json` 中的路径指向 `dist/`，是 Chrome 加载扩展用的清单
 - `src/manifest.json` 是 @crxjs 构建用的清单，路径相对于 `src/` 目录
-- 两个 manifest 的 `version` 需保持一致
+- `dist/manifest.json` 由 @crxjs 构建后自动生成，路径相对于 `dist/` 目录，是 Chrome 加载扩展用的清单
+- 从 `dist/` 目录加载扩展（开发者模式 → 加载已解压的扩展程序 → 选择 dist 目录）
+- `package.json` 与 `src/manifest.json` 的 `version` 需保持一致
 - `chrome.devtools` API 仅在 DevTools 页面上下文中可用
 - 响应体通过 `request.getContent()` 异步获取，需处理 loading 状态
 - 最大保留 500 条请求，超出后旧记录会被丢弃

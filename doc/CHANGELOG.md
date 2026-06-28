@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `getContent` 回调增加 `encoding` 参数，支持 base64 编码的二进制响应体正确解码
 - 二进制报文体时禁用文本复制/下载按钮并显示原因提示
 
+## [2.4.1] - 2026-06-29 00:01:25
+
+### Fixed
+- 修复 `dist` 目录无法直接加载扩展的问题：`devtools.ts` 中 `chrome.devtools.panels.create` 路径去除 `dist/` 前缀，统一为从 `dist/` 目录加载
+- 移除根目录 `manifest.json`，统一使用 @crxjs 生成的 `dist/manifest.json` 作为加载清单
+- Release zip 打包方式调整为仅包含 `dist/` 内容，解压后可直接加载
+- 修复 `NoteEditorDialog` 自动聚焦失效问题：移除 `autoFocus` 属性，改用 `@show` 事件 + `nextTick` 手动聚焦
+- 修复 PrimeVue `Toast` 和 `Dialog` 关闭按钮 autofocus 导致焦点异常的问题
+
 ## [2.3.2] - 2026-06-28 22:27:46
 
 ### Fixed

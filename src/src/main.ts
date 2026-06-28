@@ -28,6 +28,21 @@ app.use(PrimeVue, {
         options: {
             darkModeSelector: '@media (prefers-color-scheme: dark)'
         }
+    },
+    pt: {
+        toast: {
+            closeButton: {
+                autofocus: false
+            }
+        },
+        dialog: {
+            pcCloseButton: {
+                root: { autofocus: false }
+            },
+            pcMaximizeButton: {
+                root: { autofocus: false }
+            }
+        }
     }
 })
 app.use(ToastService)

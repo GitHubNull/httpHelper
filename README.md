@@ -29,7 +29,7 @@
 2. 打开 Chrome，访问 `chrome://extensions/`
 3. 开启右上角 **开发者模式**
 4. 点击 **加载已解压的扩展程序**
-5. 选择本项目根目录（包含 `manifest.json` 的文件夹）
+5. 选择 `dist` 目录（构建输出目录）
 
 安装完成后，按 `F12` 打开开发者工具，在顶部标签栏找到 **http helper** 即可使用。
 
@@ -72,7 +72,6 @@ httpHelper/
 ├── vite.config.ts              # Vite 构建配置
 ├── tsconfig.json               # TypeScript 配置
 ├── package.json                # 项目依赖与脚本
-├── manifest.json               # 扩展清单（加载用，指向 dist/）
 ├── README.md                   # 本文件
 └── AGENTS.md                   # 智能体开发指南
 ```

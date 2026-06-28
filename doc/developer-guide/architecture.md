@@ -124,12 +124,14 @@ App.vue
 
 ## 构建与部署
 
-### 双 manifest 方案
+### Manifest 方案
 
 | 文件 | 用途 | 路径基准 |
 |------|------|----------|
 | `src/manifest.json` | @crxjs 构建输入 | 相对于 `src/` |
-| 根目录 `manifest.json` | Chrome 扩展加载 | 指向 `dist/` |
+| `dist/manifest.json` | @crxjs 构建输出，Chrome 加载用 | 相对于 `dist/` |
+
+构建后从 `dist/` 目录加载扩展，使用 @crxjs 自动生成的 `dist/manifest.json`。
 
 ### Vite 构建配置
 

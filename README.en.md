@@ -29,7 +29,7 @@ English | [中文](README.md)
 2. Open Chrome and go to `chrome://extensions/`
 3. Enable **Developer mode** in the top-right corner
 4. Click **Load unpacked**
-5. Select the project root directory (the folder containing `manifest.json`)
+5. Select the `dist` directory (build output directory)
 
 After installation, press `F12` to open DevTools and find the **http helper** tab.
 
@@ -72,7 +72,6 @@ httpHelper/
 ├── vite.config.ts              # Vite build config
 ├── tsconfig.json               # TypeScript config
 ├── package.json                # Project dependencies and scripts
-├── manifest.json               # Extension manifest (load use, points to dist/)
 ├── README.md                   # This file
 └── AGENTS.md                   # Agent development guide
 ```
