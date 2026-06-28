@@ -1,6 +1,6 @@
 {
   "name": "http-helper",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,19 +9,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.13",
-    "pinia": "^2.3.0",
-    "primevue": "^4.5.0",
     "@primeuix/themes": "^2.0.0",
+    "highlight.js": "^11.11.1",
+    "pinia": "^2.3.0",
     "primeicons": "^7.0.0",
-    "highlight.js": "^11.11.1"
+    "primevue": "^4.5.0",
+    "vue": "^3.5.13"
   },
   "devDependencies": {
-    "vite": "^6.0.7",
-    "@vitejs/plugin-vue": "^5.2.1",
     "@crxjs/vite-plugin": "^2.0.0",
-    "vue-tsc": "^2.1.10",
+    "@types/chrome": "^0.0.287",
+    "@types/node": "^26.0.1",
+    "@vitejs/plugin-vue": "^5.2.1",
     "typescript": "^5.7.3",
-    "@types/chrome": "^0.0.287"
+    "vite": "^6.0.7",
+    "vue-tsc": "^2.1.10"
   }
 }

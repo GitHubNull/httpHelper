@@ -1,20 +1,20 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { crx } from '@crxjs/vite-plugin'
-import manifest from './vue_src/manifest.json'
+import manifest from './src/manifest.json'
 import { resolve } from 'path'
 
 export default defineConfig({
-  root: 'vue_src',
+  root: 'src',
   base: './',
   build: {
-    outDir: '../vue_dst',
+    outDir: '../dist',
     emptyOutDir: true,
     minify: false,
     sourcemap: true,
     rollupOptions: {
       input: {
-        panel: resolve(__dirname, 'vue_src/panel.html'),
+        panel: resolve(__dirname, 'src/panel.html'),
       },
       output: {
         entryFileNames: 'assets/[name].js',
@@ -25,7 +25,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'vue_src/src')
+      '@': resolve(__dirname, 'src/src')
     }
   },
   plugins: [vue(), crx({ manifest })]

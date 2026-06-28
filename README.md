@@ -21,10 +21,15 @@
 
 ## 安装
 
-1. 打开 Chrome，访问 `chrome://extensions/`
-2. 开启右上角 **开发者模式**
-3. 点击 **加载已解压的扩展程序**
-4. 选择本项目根目录（包含 `manifest.json` 的文件夹）
+1. 安装依赖并构建：
+   ```bash
+   pnpm install
+   pnpm build
+   ```
+2. 打开 Chrome，访问 `chrome://extensions/`
+3. 开启右上角 **开发者模式**
+4. 点击 **加载已解压的扩展程序**
+5. 选择本项目根目录（包含 `manifest.json` 的文件夹）
 
 安装完成后，按 `F12` 打开开发者工具，在顶部标签栏找到 **http helper** 即可使用。
 
@@ -43,31 +48,31 @@
 
 ```
 httpHelper/
-├── src/                        # 源码目录
-│   ├── manifest.json           # 扩展清单
-│   ├── devtools.html           # DevTools 入口页
-│   ├── devtools.js             # DevTools 入口脚本
-│   ├── panel.html              # 主面板 HTML
-│   ├── panel.js                # 主面板入口模块
-│   ├── panel.css               # 主面板样式
-│   ├── third_lib/              # 开源第三方依赖库
-│   │   ├── bootstrap.min.css   # Bootstrap 5.3.8
-│   │   ├── bootstrap.bundle.min.js
-│   │   └── jquery.min.js       # jQuery 4.0.0
-│   ├── modules/                # 功能模块
-│   │   ├── network-handler.js      # 网络请求捕获
-│   │   ├── content-formatter.js    # 报文格式化
-│   │   ├── ui-renderer.js          # UI 渲染
-│   │   ├── layout-manager.js       # 布局管理
-│   │   ├── search-highlighter.js   # 搜索高亮
-│   │   ├── session-extractor.js    # 会话提取
-│   │   └── session-storage.js      # 会话存储
-│   └── utils/                  # 通用工具模块
-│       ├── clipboard-utils.js  # 剪贴板与下载
-│       ├── dom-utils.js        # DOM 工具
-│       └── string-utils.js     # 字符串处理
+├── src/                        # Vite 项目根目录
+│   ├── manifest.json           # 扩展清单（@crxjs 构建用）
+│   ├── panel.html              # 面板入口 HTML
+│   ├── devtools.html            # DevTools 入口 HTML
+│   └── src/                    # Vue 3 源码目录
+│       ├── App.vue             # 根组件
+│       ├── main.ts             # 应用入口
+│       ├── devtools.ts         # DevTools 面板注册
+│       ├── components/         # Vue 组件
+│       │   ├── http-history/   # HTTP 历史组件
+│       │   ├── session-config/ # 会话配置组件
+│       │   ├── toolbar/        # 工具栏组件
+│       │   └── common/         # 通用组件
+│       ├── composables/        # 组合式 API
+│       ├── services/           # 业务服务（会话提取/存储）
+│       ├── stores/             # Pinia 状态管理
+│       ├── utils/              # 工具函数
+│       ├── types/              # TypeScript 类型定义
+│       └── styles/             # 全局样式
+├── dist/                       # 构建输出目录（加载扩展时选择此目录）
 ├── doc/                        # 文档目录
-│   └── usage-guide.md          # 使用教程
+├── vite.config.ts              # Vite 构建配置
+├── tsconfig.json               # TypeScript 配置
+├── package.json                # 项目依赖与脚本
+├── manifest.json               # 扩展清单（加载用，指向 dist/）
 ├── README.md                   # 本文件
 └── AGENTS.md                   # 智能体开发指南
 ```
@@ -75,9 +80,13 @@ httpHelper/
 ## 技术信息
 
 - Manifest Version: 3
-- 权限: 无需额外权限
+- 权限: storage
 - 支持浏览器: Chrome 88+
-- 第三方库: Bootstrap 5.3.8, jQuery 4.0.0
+- 前端框架: Vue 3.5 + TypeScript
+- 状态管理: Pinia
+- UI 组件库: PrimeVue 4.5 + PrimeIcons
+- 构建工具: Vite 6 + @crxjs/vite-plugin
+- 代码高亮: highlight.js
 
 ## 许可证
 

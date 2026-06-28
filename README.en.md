@@ -21,10 +21,15 @@ English | [中文](README.md)
 
 ## Installation
 
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable **Developer mode** in the top-right corner
-3. Click **Load unpacked**
-4. Select the project root directory (the folder containing `manifest.json`)
+1. Install dependencies and build:
+   ```bash
+   pnpm install
+   pnpm build
+   ```
+2. Open Chrome and go to `chrome://extensions/`
+3. Enable **Developer mode** in the top-right corner
+4. Click **Load unpacked**
+5. Select the project root directory (the folder containing `manifest.json`)
 
 After installation, press `F12` to open DevTools and find the **http helper** tab.
 
@@ -43,41 +48,45 @@ For detailed usage, see [doc/usage-guide.md](doc/usage-guide.md).
 
 ```
 httpHelper/
-├── src/                        # Source directory
-│   ├── manifest.json           # Extension manifest
-│   ├── devtools.html           # DevTools entry page
-│   ├── devtools.js             # DevTools entry script
-│   ├── panel.html              # Main panel HTML
-│   ├── panel.js                # Main panel entry module
-│   ├── panel.css               # Main panel styles
-│   ├── third_lib/              # Open-source third-party libraries
-│   │   ├── bootstrap.min.css   # Bootstrap 5.3.8
-│   │   ├── bootstrap.bundle.min.js
-│   │   └── jquery.min.js       # jQuery 4.0.0
-│   ├── modules/                # Feature modules
-│   │   ├── network-handler.js      # Network request capture
-│   │   ├── content-formatter.js    # Message formatting
-│   │   ├── ui-renderer.js          # UI rendering
-│   │   ├── layout-manager.js       # Layout management
-│   │   ├── search-highlighter.js   # Search highlighting
-│   │   ├── session-extractor.js    # Session extraction
-│   │   └── session-storage.js      # Session storage
-│   └── utils/                  # Utility modules
-│       ├── clipboard-utils.js  # Clipboard and download
-│       ├── dom-utils.js        # DOM utilities
-│       └── string-utils.js     # String processing
+├── src/                        # Vite project root
+│   ├── manifest.json           # Extension manifest (@crxjs build)
+│   ├── panel.html              # Panel entry HTML
+│   ├── devtools.html            # DevTools entry HTML
+│   └── src/                    # Vue 3 source directory
+│       ├── App.vue             # Root component
+│       ├── main.ts             # App entry
+│       ├── devtools.ts         # DevTools panel registration
+│       ├── components/         # Vue components
+│       │   ├── http-history/   # HTTP history components
+│       │   ├── session-config/ # Session config components
+│       │   ├── toolbar/        # Toolbar components
+│       │   └── common/         # Common components
+│       ├── composables/        # Composition API
+│       ├── services/           # Business services (session extraction/storage)
+│       ├── stores/             # Pinia state management
+│       ├── utils/              # Utility functions
+│       ├── types/              # TypeScript type definitions
+│       └── styles/             # Global styles
+├── dist/                       # Build output directory (load extension from here)
 ├── doc/                        # Documentation directory
-│   └── usage-guide.md          # Usage guide
-├── README.md                   # This file (Chinese)
+├── vite.config.ts              # Vite build config
+├── tsconfig.json               # TypeScript config
+├── package.json                # Project dependencies and scripts
+├── manifest.json               # Extension manifest (load use, points to dist/)
+├── README.md                   # This file
 └── AGENTS.md                   # Agent development guide
 ```
 
 ## Tech Info
 
 - Manifest Version: 3
-- Permissions: none required
+- Permissions: storage
 - Supported browsers: Chrome 88+
-- Third-party libraries: Bootstrap 5.3.8, jQuery 4.0.0
+- Frontend framework: Vue 3.5 + TypeScript
+- State management: Pinia
+- UI components: PrimeVue 4.5 + PrimeIcons
+- Build tool: Vite 6 + @crxjs/vite-plugin
+- Syntax highlighting: highlight.js
 
 ## License
 

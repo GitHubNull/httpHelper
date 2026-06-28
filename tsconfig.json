@@ -13,9 +13,9 @@
     "skipLibCheck": true,
     "noEmit": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["vue_src/src/*"] },
+    "paths": { "@/*": ["src/src/*"] },
     "types": ["chrome"]
   },
-  "include": ["vue_src/src/**/*.ts", "vue_src/src/**/*.vue", "vue_src/src/**/*.d.ts"],
+  "include": ["src/src/**/*.ts", "src/src/**/*.vue", "src/src/**/*.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

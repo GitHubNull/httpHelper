@@ -2,62 +2,163 @@
 
 ## 设计目标
 
-http helper 的设计目标是提供一个轻量、高效、可扩展的 Chrome DevTools 扩展，用于捕获和展示 HTTP 请求/响应的原生报文。
+http helper 的设计目标是提供一个轻量、高效、可扩展的 Chrome DevTools 扩展，用于捕获和展示 HTTP 请求/响应的原生报文。项目基于 Vue 3 + TypeScript + Pinia 技术栈构建。
 
 ## 核心原则
 
-1. **单一职责**：每个模块只负责一个功能领域
-2. **低耦合**：模块间通过明确的 API 交互，不直接访问内部状态
-3. **可扩展**：新增功能只需添加模块，无需修改现有代码
-4. **零外部依赖**：第三方库通过 `src/third_lib/` 本地引入，不依赖 CDN
+1. **单一职责**：每个组件/store/service 只负责一个功能领域
+2. **低耦合**：模块间通过 Pinia store 和 props/emits 交互，不直接访问内部状态
+3. **可扩展**：新增功能只需添加组件或 store，无需修改现有代码
+4. **类型安全**：全面使用 TypeScript，HAR 数据有完整类型定义
+5. **响应式驱动**：UI 更新由 Pinia 响应式状态驱动，无需手动 DOM 操作
+
+## 技术栈
+
+- **前端框架**：Vue 3.5（Composition API + `<script setup>`）
+- **状态管理**：Pinia（Options API 风格 store）
+- **UI 组件库**：PrimeVue 4.5 + PrimeIcons 7.0
+- **构建工具**：Vite 6 + @crxjs/vite-plugin
+- **类型系统**：TypeScript 5.7（strict 模式）
+- **代码高亮**：highlight.js 11.x
 
 ## 数据流
 
 ```
 Chrome Network API
        ↓
-NetworkHandler (捕获 & 存储)
+useNetworkListener (composable)
        ↓
-panel.js (协调 & 路由)
+networkStore (捕获 & 存储)
        ↓
-├─→ UiRenderer ──→ 请求列表渲染
-├─→ ContentFormatter ──→ 报文构建
-├─→ LayoutManager ──→ 布局控制
-├─→ SearchHighlighter ──→ 搜索高亮
-├─→ SessionExtractor ──→ 会话提取
-└─→ SessionStorage ──→ 数据持久化
+filterStore.refreshDisplay() (过滤 & 排序)
+       ↓
+Vue 组件响应式渲染
+       ├── RequestTable.vue ──→ 请求列表
+       ├── ContentPanes.vue ──→ Raw/Pretty/Hex 视图
+       ├── SearchBar.vue ──→ 搜索高亮
+       └── SessionConfigTab ──→ 会话管理
+```
+
+### 请求选择数据流
+
+```
+RequestTable 行点击
+       ↓
+selectionStore.selectRequest(request)
+       ├── buildRawRequestFromEntry() ──→ requestContent.raw
+       ├── buildPrettyRequestFromEntry() ──→ requestContent.pretty
+       ├── buildHexRequestFromEntry() ──→ requestContent.hex
+       └── request.getContent() (异步)
+              ├── buildRawResponseFromEntry() ──→ responseContent.raw
+              ├── buildPrettyResponseFromEntry() ──→ responseContent.pretty
+              ├── buildHexResponseFromEntry() ──→ responseContent.hex
+              └── 智能标签切换（根据 Content-Type）
 ```
 
 ## 状态管理
 
-本项目采用**去中心化状态管理**，各模块维护自身状态：
+本项目采用 **Pinia 集中式状态管理**，5 个 store 协调各功能模块：
 
-| 状态 | 归属模块 | 说明 |
-|------|----------|------|
-| 请求列表 | `NetworkHandler` | 内存数组，最大 500 条 |
-| 当前选中索引 | `panel.js` | 全局状态 |
-| 布局模式 | `LayoutManager` | vertical/horizontal/tabs |
-| 搜索状态 | `SearchHighlighter` | 关键词、匹配列表、当前索引 |
-| Scheme 数据 | `SessionStorage` | `chrome.storage.local` 持久化 |
-| 激活 Scheme | `SessionStorage` | 当前生效的提取方案 |
+| Store | 职责 | 关键状态 |
+|-------|------|----------|
+| `network` | 网络请求捕获与存储 | requests[], isRecording, requestMeta |
+| `filter` | 请求过滤与排序 | filterState, sortState, displayedRequests |
+| `selection` | 请求选择与面板内容 | currentRequest, requestContent, responseContent, activeTab |
+| `session` | 会话方案与字段管理 | schemes[], fields[], activeScheme |
+| `search` | 搜索状态（双面板独立） | req/res: { text, matches, currentIndex } |
+
+### Store 间依赖关系
+
+```
+network ← filter (过滤依赖请求列表)
+network ← selection (选择依赖请求)
+filter  ← selection (选择更新触发刷新)
+network ← session (会话提取依赖请求)
+selection ← search (高亮依赖面板内容)
+```
+
+## 组件架构
+
+### 主要组件层次
+
+```
+App.vue
+├── ToolbarBar.vue              # 顶部工具栏（录制开关、清空、布局切换）
+├── Tabs (PrimeVue)
+│   ├── TabPanel: HTTP 历史
+│   │   └── HttpHistoryTab.vue
+│   │       ├── FilterBar.vue           # 基础过滤
+│   │       ├── FilterBarAdvanced.vue   # 高级过滤
+│   │       ├── RequestTableArea.vue
+│   │       │   ├── RequestTable.vue    # PrimeVue DataTable
+│   │       │   └── ColumnConfig.vue     # 列配置
+│   │       └── HttpDetailArea.vue
+│   │           ├── RequestPane.vue
+│   │           │   ├── ContentPanes.vue (Raw/Pretty/Hex)
+│   │           │   │   ├── RawView.vue
+│   │           │   │   ├── PrettyView.vue
+│   │           │   │   └── HexView.vue
+│   │           │   └── SearchBar.vue
+│   │           ├── ResponsePane.vue
+│   │           │   ├── ContentPanes.vue
+│   │           │   └── SearchBar.vue
+│   │           └── PaneResizer.vue
+│   └── TabPanel: 会话配置
+│       └── SessionConfigTab.vue
+│           ├── SchemesManagement.vue
+│           ├── FieldsManagement.vue
+│           ├── SchemeEditorDialog.vue
+│           ├── FieldEditorDialog.vue
+│           └── NoteEditorDialog.vue
+├── FullscreenOverlay.vue      # 全屏覆盖层
+└── Toast (PrimeVue)           # 操作反馈通知
+```
+
+## 构建与部署
+
+### 双 manifest 方案
+
+| 文件 | 用途 | 路径基准 |
+|------|------|----------|
+| `src/manifest.json` | @crxjs 构建输入 | 相对于 `src/` |
+| 根目录 `manifest.json` | Chrome 扩展加载 | 指向 `dist/` |
+
+### Vite 构建配置
+
+```typescript
+// vite.config.ts 核心配置
+{
+  root: 'src',           // Vite 项目根目录
+  base: './',            // 相对路径（Chrome 扩展必需）
+  build: {
+    outDir: '../dist',   // 输出到 dist/
+    emptyOutDir: true,
+  },
+  resolve: {
+    alias: { '@': 'src/src' }  // Vue 源码路径别名
+  }
+}
+```
 
 ## 扩展点
 
 ### 新增视图类型
 
-1. 在 `ContentFormatter` 中新增 `buildXxxRequest/Response` 方法
-2. 在 `panel.html` 的 `.tab-nav` 中新增标签按钮
-3. 在 `panel.js` 的 `selectRequest()` 中增加视图切换逻辑
+1. 在 `src/src/utils/content-formatter.ts` 中新增构建函数
+2. 在 `ContentPanes.vue` 中新增 Tab 选项
+3. 创建对应的 View 组件
+4. 在 `selectionStore` 中新增对应内容字段
 
 ### 新增提取模式
 
-1. 在 `SessionExtractor.extractByMode()` 的 switch 中新增 case
-2. 在 `panel.html` 的 Mode 下拉框中新增选项
+1. 在 `src/src/services/session-extractor.ts` 的 `extractByMode()` switch 中新增 case
+2. 在 `FieldEditorDialog.vue` 的 Mode 下拉框中新增选项
 
 ### 新增布局模式
 
-1. 在 `LayoutManager.switchLayout()` 中新增分支
-2. 在 `panel.css` 中新增布局样式类
+1. 在 `selectionStore` 的 `LayoutType` 类型中新增
+2. 在 `LayoutBar.vue` 中新增布局按钮
+3. 在 `HttpHistoryTab.vue` 中新增布局样式类
 
 ## 性能考虑
 
@@ -65,3 +166,5 @@ panel.js (协调 & 路由)
 - 搜索使用防抖（300ms），避免频繁高亮重绘
 - Hex 视图对大内容分段渲染，避免 DOM 阻塞
 - `chrome.storage.local` 异步读写，不阻塞主线程
+- Vue 响应式系统自动优化 DOM 更新，仅重渲染变更部分
+- PrimeVue DataTable 虚拟滚动支持大量数据

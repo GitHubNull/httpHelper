@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-06-28
+
+### Changed
+- 目录结构标准化：`vue_src/` 重命名为 `src/`，`vue_dst/` 重命名为 `dist/`
+- 更新 `manifest.json`、`vite.config.ts`、`tsconfig.json` 等配置文件以适配新目录结构
+- 更新 `README.md`、`README.en.md`、`AGENTS.md` 及开发者文档以反映新目录结构
+- 清理旧版纯原生 JS 源码（原 `src/` 目录下的旧实现文件）
+
+### Removed
+- 移除旧版原生 HTML/CSS/JS 源码目录（原 `src/` 下的 devtools.js、panel.js、modules/、utils/、third_lib/ 等）
+
 ## [2.1.0] - 2026-06-28
 
 ### Added
@@ -35,11 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 项目构建系统从手动管理迁移至 Vite + Vue TSC
-- 扩展入口页面与面板页面迁移至 `vue_dst/` 构建输出目录
-- 图标资源路径更新为 `vue_dst/icons/`
+- 扩展入口页面与面板页面迁移至 `dist/` 构建输出目录（原 `vue_dst/`，已于 v2.2.0 重命名）
+- 图标资源路径更新为 `dist/icons/`
 
 ### Removed
-- 移除原有纯原生 HTML/CSS/JS 源码目录（保留 `src/` 作为历史参考）
+- 移除原有纯原生 HTML/CSS/JS 源码目录（已于 v2.2.0 正式删除，`vue_src/` 重命名为 `src/`）
 
 ## [1.3.4] - 2025-06-28
 
