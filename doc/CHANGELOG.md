@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-06-28 22:05:16
+
+### Added
+- 新增 GitHub Actions CI 构建检查工作流（push/PR 到 main 时自动执行 `pnpm build`）
+- 新增 GitHub Actions 自动发布工作流（推送 `v*` tag 时自动构建、打包 zip 并创建 GitHub Release）
+- 新增开发者文档「自动化发布流程」章节，说明触发机制和发布步骤
+
 ## [2.2.1] - 2026-06-28 14:00:00
 
 ### Fixed

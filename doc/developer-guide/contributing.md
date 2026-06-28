@@ -62,6 +62,45 @@ PR 将由维护者审查，可能要求：
 
 > **注意**：`AGENTS.md` 是 AI 智能体的项目指南，需与实际代码保持同步。
 
+## 自动化发布流程
+
+项目使用 GitHub Actions 实现自动化构建检查与发布，无需手动构建或上传产物。
+
+### CI 构建检查
+
+- **触发条件**：push 到 `main` 分支、提交 PR 到 `main` 分支
+- **工作流文件**：[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
+- **执行内容**：安装依赖（`pnpm install --frozen-lockfile`）→ 构建扩展（`pnpm build`）
+- **作用**：确保提交的代码可正常构建，构建失败时阻止 PR 合并
+
+### 自动发布
+
+- **触发条件**：推送 `v*` 格式的 tag（如 `v2.2.1`）
+- **工作流文件**：[`.github/workflows/release.yml`](../../.github/workflows/release.yml)
+- **执行内容**：
+  1. 构建扩展，生成 `dist/` 目录
+  2. 打包为 `http-helper-vX.Y.Z.zip`
+  3. 从 `doc/CHANGELOG.md` 提取对应版本的变更记录作为 Release 说明
+  4. 创建 GitHub Release 并上传 zip 附件
+- **权限**：工作流需 `contents: write` 权限以创建 Release
+
+### 发布步骤
+
+1. 确保以下文件版本号一致：
+   - `package.json` 的 `version` 字段
+   - `src/manifest.json` 的 `version` 字段
+   - 根目录 `manifest.json` 的 `version` 字段
+2. 在 `doc/CHANGELOG.md` 顶部添加新版本条目（遵循 Keep a Changelog 格式）
+3. 提交变更：`git commit -m "release: vX.Y.Z"`
+4. 创建并推送 tag：
+   ```bash
+   git tag -a vX.Y.Z -m "Release vX.Y.Z"
+   git push origin main --follow-tags
+   ```
+5. GitHub Actions 将自动构建并创建 Release
+
+> **注意**：tag 名必须以 `v` 开头（如 `v2.3.0`），否则不会触发自动发布。Release 说明从 `doc/CHANGELOG.md` 中提取，请确保 CHANGELOG 已更新。
+
 ---
 
 ## 联系方式
