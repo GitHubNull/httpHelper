@@ -2,7 +2,7 @@
 
 ## 设计目标
 
-Raw HTTP Copier 的设计目标是提供一个轻量、高效、可扩展的 Chrome DevTools 扩展，用于捕获和展示 HTTP 请求/响应的原生报文。
+http helper 的设计目标是提供一个轻量、高效、可扩展的 Chrome DevTools 扩展，用于捕获和展示 HTTP 请求/响应的原生报文。
 
 ## 核心原则
 

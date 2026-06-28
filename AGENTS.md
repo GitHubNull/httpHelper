@@ -18,7 +18,7 @@ httpHelper/
 ├── src/                        # 源码目录
 │   ├── manifest.json           # 扩展清单，定义扩展元信息和入口
 │   ├── devtools.html           # DevTools 入口页，加载 devtools.js
-│   ├── devtools.js             # 注册 DevTools 自定义面板 "Raw HTTP"
+│   ├── devtools.js             # 注册 DevTools 自定义面板 "http helper"
 │   ├── panel.html              # 主面板 HTML 结构
 │   ├── panel.js                # 主面板入口模块：初始化、事件绑定、模块协调
 │   ├── panel.css               # 主面板样式，支持亮/暗主题自适应
@@ -52,7 +52,7 @@ httpHelper/
 - 无需任何额外权限
 
 ### devtools.js
-- 调用 `chrome.devtools.panels.create()` 注册名为 "Raw HTTP" 的自定义面板
+- 调用 `chrome.devtools.panels.create()` 注册名为 "http helper" 的自定义面板
 - 面板内容指向 `src/panel.html`
 
 ### panel.js 主入口模块

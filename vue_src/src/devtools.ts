@@ -1,6 +1,6 @@
 chrome.devtools.panels.create(
-    'Raw HTTP',
+    'http helper',
     'vue_dst/icons/icon16.png',
     'vue_dst/panel.html',
-    () => console.log('[Raw HTTP] Panel created')
+    () => console.log('[http helper] Panel created')
 )

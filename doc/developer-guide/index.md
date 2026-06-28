@@ -26,7 +26,7 @@
 3. 开启右上角 **开发者模式**
 4. 点击 **加载已解压的扩展程序**
 5. 选择项目根目录（包含 `manifest.json` 的文件夹）
-6. 在 DevTools 中找到 **Raw HTTP** 面板即可开始调试
+6. 在 DevTools 中找到 **http helper** 面板即可开始调试
 
 ### 热重载
 
@@ -139,7 +139,7 @@ try {
 ### Chrome DevTools 调试
 
 1. 打开任意网页，按 `F12` 打开 DevTools
-2. 切换到 **Raw HTTP** 面板
+2. 切换到 **http helper** 面板
 3. 右键点击面板内容，选择 **检查** 可打开嵌套 DevTools（DevTools 中的 DevTools）
 4. 在 Console 中查看日志和错误
 

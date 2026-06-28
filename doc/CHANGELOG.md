@@ -122,7 +122,8 @@
 - 无
 
 ### Changed
-- 无
+- DevTools 面板标题从 "Raw HTTP" 更改为 "http helper"，与扩展名称保持一致
+- 同步更新所有文档（README、AGENTS.md、开发者指南、使用教程）中的面板名称引用
 
 ### Deprecated
 - 无

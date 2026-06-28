@@ -26,11 +26,11 @@ English | [中文](README.md)
 3. Click **Load unpacked**
 4. Select the project root directory (the folder containing `manifest.json`)
 
-After installation, press `F12` to open DevTools and find the **Raw HTTP** tab.
+After installation, press `F12` to open DevTools and find the **http helper** tab.
 
 ## Quick Start
 
-1. Open the **Raw HTTP** panel
+1. Open the **http helper** panel
 2. Refresh the page or trigger network activity
 3. Click any request in the left list
 4. View raw request/response on the right, click **Copy** or **Download**
