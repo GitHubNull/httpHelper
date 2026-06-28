@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-06-29
+
+### Added
+- 新增工具栏弹出页（popup），显示扩展版本与图标，提供 DevTools 入口指引
+- 新增请求表格右键上下文菜单，支持快捷复制 URL、Path 和请求头
+
 ## [2.4.0] - 2026-06-28 23:35:10
 
 ### Added

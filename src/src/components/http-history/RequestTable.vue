@@ -38,6 +38,7 @@
             v-model:selection="selectedRow"
             selectionMode="single"
             @row-click="onRowClick"
+            @row-contextmenu="onRowContextMenu"
             :resizableColumns="true"
             columnResizeMode="expand"
             :reorderableColumns="true"
@@ -115,6 +116,7 @@
                 </template>
             </Column>
         </DataTable>
+        <ContextMenu ref="contextMenu" :model="contextMenuItems" />
         <ColorPicker ref="colorPickerRef" />
     </div>
 </template>
@@ -131,6 +133,10 @@ import { useFilterStore } from '@/stores/filter'
 import { useNetworkStore } from '@/stores/network'
 import { useSelectionStore, COLOR_MAP } from '@/stores/selection'
 import { getResourceCategory, formatTimestamp, truncateUrl } from '@/utils/string-utils'
+import ContextMenu from 'primevue/contextmenu'
+import { useToast } from 'primevue/usetoast'
+import { copyText } from '@/utils/clipboard-utils'
+import { buildRawRequest } from '@/utils/content-formatter'
 import type { HarEntry } from '@/types/har'
 
 const filterStore = useFilterStore()
@@ -138,6 +144,9 @@ const networkStore = useNetworkStore()
 const selectionStore = useSelectionStore()
 const colorPickerRef = ref()
 const colConfigPopover = ref()
+const toast = useToast()
+const contextMenu = ref()
+const contextMenuRow = ref<HarEntry | null>(null)
 
 const allColumns = ref([
     { field: 'index', header: '#', sortable: true, width: '40px', visible: true, mandatory: true },
@@ -212,6 +221,55 @@ function openNoteEditor(data: HarEntry) {
     if (!uid) return
     const meta = networkStore.getRequestMeta(uid)
     selectionStore.setNoteEditing(uid, meta.note)
+}
+
+const contextMenuItems = [
+    {
+        label: '复制URL',
+        icon: 'pi pi-link',
+        command: () => copyUrl()
+    },
+    {
+        label: '复制Path',
+        icon: 'pi pi-directions',
+        command: () => copyPath()
+    },
+    {
+        label: '复制Headers',
+        icon: 'pi pi-copy',
+        command: () => copyHeaders()
+    }
+]
+
+function onRowContextMenu(event: any) {
+    const request = event.data as HarEntry
+    contextMenuRow.value = request
+    selectionStore.selectRequest(request)
+    contextMenu.value.show(event.originalEvent)
+}
+
+function copyUrl() {
+    if (!contextMenuRow.value) return
+    copyText(contextMenuRow.value.request.url).then(ok => {
+        toast.add({ severity: 'success', summary: ok ? 'URL已复制' : '复制失败', life: 2000 })
+    })
+}
+
+function copyPath() {
+    if (!contextMenuRow.value) return
+    const path = truncateUrl(contextMenuRow.value.request.url)
+    copyText(path).then(ok => {
+        toast.add({ severity: 'success', summary: ok ? 'Path已复制' : '复制失败', life: 2000 })
+    })
+}
+
+function copyHeaders() {
+    if (!contextMenuRow.value) return
+    const raw = buildRawRequest(contextMenuRow.value.request)
+    const headers = raw.split('\r\n\r\n')[0]
+    copyText(headers).then(ok => {
+        toast.add({ severity: 'success', summary: ok ? '请求头已复制' : '复制失败', life: 2000 })
+    })
 }
 </script>
 
