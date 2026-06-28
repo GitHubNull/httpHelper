@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-06-29 00:47:34
+
+### Fixed
+- 修复列配置下拉菜单中序号字段重复显示问题：`color` 列 header 为空字符串时被 `|| '#'` 回退为 `#`，与 `index` 列重复
+- 修正列配置默认不可取消勾选字段：由序号+标签改为序号+路径
+
 ## [2.5.0] - 2026-06-29
 
 ### Added
