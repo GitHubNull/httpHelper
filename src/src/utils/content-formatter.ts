@@ -1,5 +1,6 @@
 import type { HarEntry, HarRequest, HarResponse, HarHeader } from '@/types/har'
 import { formatJson, formatXml, stringToHex, detectContentType as detectCt } from './string-utils'
+import { base64ToBytes } from './clipboard-utils'
 
 export function detectContentType(headers: HarHeader[]): string {
     return detectCt(headers)
@@ -108,4 +109,29 @@ export function buildHexRequestFromEntry(entry: HarEntry): string {
 
 export function buildHexResponseFromEntry(entry: HarEntry, body: string): string {
     return buildHexResponse(entry.response, body)
+}
+
+// 判断报文体是否为二进制：有 body 且类型为 binary
+export function isBodyBinary(headers: HarHeader[], body: string): boolean {
+    if (!body) return false
+    return detectContentType(headers) === 'binary'
+}
+
+// 将 body 转换为字节数组（根据 encoding 决定解码方式）
+export function bodyToBytes(body: string, encoding: string): Uint8Array {
+    if (!body) return new Uint8Array(0)
+    if (encoding === 'base64') {
+        return base64ToBytes(body)
+    }
+    return new TextEncoder().encode(body)
+}
+
+// 构建完整 HTTP 报文字节（头文本字节 + 体字节）
+export function buildBinaryMessage(headerText: string, body: string, encoding: string): Uint8Array {
+    const headerBytes = new TextEncoder().encode(headerText)
+    const bodyBytes = bodyToBytes(body, encoding)
+    const combined = new Uint8Array(headerBytes.length + bodyBytes.length)
+    combined.set(headerBytes, 0)
+    combined.set(bodyBytes, headerBytes.length)
+    return combined
 }

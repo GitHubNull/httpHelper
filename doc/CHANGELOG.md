@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-06-28 22:35:00
+
+### Added
+- 新增二进制响应体识别功能，自动检测 Content-Type 区分二进制与文本内容
+- 新增二进制数据下载功能，支持单独下载响应体或完整 HTTP 报文字节流
+- 新增智能文件命名规则：按 Content-Disposition > URL 路径文件名 > Content-Type 扩展名 > 时间戳回退 的优先级生成下载文件名
+- 新增 MIME 类型到文件扩展名映射表，覆盖图片、音频、视频、文档、压缩包、字体等常见类型
+- 新增 `base64ToBytes`、`downloadBinary`、`bodyToBytes`、`buildBinaryMessage` 工具函数
+
+### Changed
+- `detectContentType` 默认返回值从 `text` 改为 `binary`，更准确识别未知 Content-Type 为二进制类型
+- `getContent` 回调增加 `encoding` 参数，支持 base64 编码的二进制响应体正确解码
+- 二进制报文体时禁用文本复制/下载按钮并显示原因提示
+
 ## [2.3.2] - 2026-06-28 22:27:46
 
 ### Fixed

@@ -21,14 +21,16 @@
                             @click="copyContent"
                             text
                             size="small"
-                            v-tooltip.top="'复制全部'"
+                            :disabled="isBodyBinary"
+                            v-tooltip.top="isBodyBinary ? '因为报文体是二进制数据，无法复制' : '复制全部'"
                         />
                         <Button
                             icon="pi pi-download"
                             @click="downloadContent"
                             text
                             size="small"
-                            v-tooltip.top="'下载'"
+                            :disabled="isBodyBinary"
+                            v-tooltip.top="isBodyBinary ? '因为报文体是二进制数据，无法下载' : '下载'"
                         />
                         <Button
                             icon="pi pi-key"
@@ -91,9 +93,9 @@ import { useFullscreenOverlay } from '@/composables/useFullscreenOverlay'
 import { useSelectionStore } from '@/stores/selection'
 import { useSessionStore } from '@/stores/session'
 import { useToast } from 'primevue/usetoast'
-import { copyText, downloadText } from '@/utils/clipboard-utils'
+import { copyText, downloadText, downloadBinary } from '@/utils/clipboard-utils'
 import { detectContentType } from '@/utils/string-utils'
-import { buildRawRequest } from '@/utils/content-formatter'
+import { buildRawRequest, bodyToBytes, buildBinaryMessage } from '@/utils/content-formatter'
 
 const selectionStore = useSelectionStore()
 const { isFullscreen, overlayRef, target, toggle } = useFullscreenOverlay()
@@ -115,18 +117,52 @@ const prettyLanguage = computed(() => {
     return ''
 })
 
-const copyMenuItems = [
-    {
-        label: '复制请求头',
-        icon: 'pi pi-copy',
-        command: () => copyHeaders()
-    },
-    {
-        label: '复制请求体',
-        icon: 'pi pi-copy',
-        command: () => copyBody()
+const isBodyBinary = computed(() => selectionStore.isRequestBodyBinary)
+
+const copyMenuItems = computed(() => {
+    if (isBodyBinary.value) {
+        return [
+            {
+                label: '复制请求头',
+                icon: 'pi pi-copy',
+                command: () => copyHeaders()
+            },
+            {
+                label: '复制请求体（二进制，不可用）',
+                icon: 'pi pi-copy',
+                disabled: true
+            },
+            { separator: true },
+            {
+                label: '下载请求头',
+                icon: 'pi pi-download',
+                command: () => downloadHeaders()
+            },
+            {
+                label: '下载二进制请求体',
+                icon: 'pi pi-download',
+                command: () => downloadBinaryBody()
+            },
+            {
+                label: '下载二进制完整请求报文',
+                icon: 'pi pi-download',
+                command: () => downloadBinaryMessage()
+            }
+        ]
     }
-]
+    return [
+        {
+            label: '复制请求头',
+            icon: 'pi pi-copy',
+            command: () => copyHeaders()
+        },
+        {
+            label: '复制请求体',
+            icon: 'pi pi-copy',
+            command: () => copyBody()
+        }
+    ]
+})
 
 function toggleCopyMenu(event: Event) {
     copyMenu.value.toggle(event)
@@ -147,6 +183,28 @@ function copyBody() {
     copyText(body).then(ok => {
         toast.add({ severity: 'success', summary: body ? (ok ? '请求体已复制' : '复制失败') : '无主体内容', life: 2000 })
     })
+}
+
+function downloadHeaders() {
+    if (!selectionStore.currentRequest) return
+    const raw = buildRawRequest(selectionStore.currentRequest.request)
+    const headers = raw.split('\r\n\r\n')[0]
+    downloadText(headers, 'request_headers.txt')
+}
+
+function downloadBinaryBody() {
+    if (!selectionStore.currentRequest) return
+    const body = selectionStore.currentRequest.request.postData?.text || ''
+    const bytes = bodyToBytes(body, '')
+    downloadBinary(bytes, 'request_body.bin')
+}
+
+function downloadBinaryMessage() {
+    if (!selectionStore.currentRequest) return
+    const body = selectionStore.currentRequest.request.postData?.text || ''
+    const headerText = buildRawRequest(selectionStore.currentRequest.request).split('\r\n\r\n')[0] + '\r\n\r\n'
+    const bytes = buildBinaryMessage(headerText, body, '')
+    downloadBinary(bytes, 'request_full.bin')
 }
 
 function copyContent() {

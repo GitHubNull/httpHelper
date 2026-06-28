@@ -32,7 +32,7 @@ export interface HarEntry {
     response: HarResponse
     startedDateTime: string
     time: number
-    getContent: (callback: (body: string) => void) => void
+    getContent: (callback: (body: string, encoding: string) => void) => void
     _uid?: number
     _reqStartTime?: string | null
     _resEndTime?: string | null

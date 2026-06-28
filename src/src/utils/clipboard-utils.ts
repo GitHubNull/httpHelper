@@ -30,3 +30,24 @@ export function downloadText(text: string, filename: string): void {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
 }
+
+export function base64ToBytes(base64: string): Uint8Array {
+    const binaryString = atob(base64)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+    }
+    return bytes
+}
+
+export function downloadBinary(bytes: Uint8Array, filename: string): void {
+    const blob = new Blob([bytes as BlobPart], { type: 'application/octet-stream' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+}

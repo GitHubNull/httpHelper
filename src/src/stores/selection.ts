@@ -3,7 +3,7 @@ import type { HarEntry } from '@/types/har'
 import {
     buildRawRequestFromEntry, buildPrettyRequestFromEntry, buildHexRequestFromEntry,
     buildRawResponseFromEntry, buildPrettyResponseFromEntry, buildHexResponseFromEntry,
-    detectContentType
+    detectContentType, isBodyBinary
 } from '@/utils/content-formatter'
 import { useFilterStore } from './filter'
 
@@ -40,6 +40,9 @@ export const useSelectionStore = defineStore('selection', {
         tableRatio: 50,
         paneRatio: 50,
         isLoadingBody: false,
+        isRequestBodyBinary: false,
+        isResponseBodyBinary: false,
+        currentResponseEncoding: '',
         requestContent: { raw: '', pretty: '', hex: '' } as PaneContent,
         responseContent: { raw: '', pretty: '', hex: '' } as PaneContent,
         editingNoteUid: null as number | null,
@@ -59,19 +62,24 @@ export const useSelectionStore = defineStore('selection', {
                     pretty: buildPrettyRequestFromEntry(request),
                     hex: buildHexRequestFromEntry(request)
                 }
+                this.isRequestBodyBinary = isBodyBinary(request.request.headers, request.request.postData?.text || '')
 
                 this.responseContent = { raw: '加载中...', pretty: '加载中...', hex: '加载中...' }
+                this.isResponseBodyBinary = false
+                this.currentResponseEncoding = ''
                 this.isLoadingBody = true
 
-                request.getContent((body: string) => {
+                request.getContent((body: string, encoding: string) => {
                     const bodyText = body || ''
                     this.currentResponseBody = bodyText
+                    this.currentResponseEncoding = encoding || ''
                     this.responseContent = {
                         raw: buildRawResponseFromEntry(request, bodyText),
                         pretty: buildPrettyResponseFromEntry(request, bodyText),
                         hex: buildHexResponseFromEntry(request, bodyText)
                     }
                     this.isLoadingBody = false
+                    this.isResponseBodyBinary = isBodyBinary(request.response.headers, bodyText)
 
                     // Only switch to pretty/hex when body is non-empty
                     const resType = bodyText ? detectContentType(request.response ? request.response.headers : []) : 'text'
@@ -88,6 +96,9 @@ export const useSelectionStore = defineStore('selection', {
             } else {
                 filterStore.setSelectedUid(null)
                 this.currentResponseBody = ''
+                this.currentResponseEncoding = ''
+                this.isRequestBodyBinary = false
+                this.isResponseBodyBinary = false
                 this.requestContent = { raw: '', pretty: '', hex: '' }
                 this.responseContent = { raw: '', pretty: '', hex: '' }
             }
@@ -96,6 +107,9 @@ export const useSelectionStore = defineStore('selection', {
         clearSelection() {
             this.currentRequest = null
             this.currentResponseBody = ''
+            this.currentResponseEncoding = ''
+            this.isRequestBodyBinary = false
+            this.isResponseBodyBinary = false
             this.requestContent = { raw: '', pretty: '', hex: '' }
             this.responseContent = { raw: '', pretty: '', hex: '' }
             this.isLoadingBody = false
