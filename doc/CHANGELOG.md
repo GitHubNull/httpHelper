@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.2] - 2026-06-29
+
+### Fixed
+- 修复 `package.json` 和 `src/manifest.json` 中 JSON 语法错误（缺失逗号）
+
+### Changed
+- CI/CD 工作流 Node.js 版本升级至 22（`ci.yml` / `release.yml`）
+
 ## [2.5.1] - 2026-06-29 00:47:34
 
 ### Fixed
