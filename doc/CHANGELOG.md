@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.0] - 2026-06-28 22:35:00
+## [2.4.0] - 2026-06-28 23:35:10
 
 ### Added
 - 新增二进制响应体识别功能，自动检测 Content-Type 区分二进制与文本内容
