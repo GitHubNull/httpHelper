@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] - 2026-06-28
+## [2.2.1] - 2026-06-28 14:00:00
+
+### Fixed
+- 修正所有版本条目的日期格式，统一为 `YYYY-MM-DD HH:mm:ss` 格式
+- 使用 `git log` 查询实际 tag 提交时间替换所有猜测/占位日期
+
+## [2.2.0] - 2026-06-28 13:49:37
 
 ### Changed
 - 目录结构标准化：`vue_src/` 重命名为 `src/`，`vue_dst/` 重命名为 `dist/`
@@ -16,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - 移除旧版原生 HTML/CSS/JS 源码目录（原 `src/` 下的 devtools.js、panel.js、modules/、utils/、third_lib/ 等）
 
-## [2.1.0] - 2026-06-28
+## [2.1.0] - 2026-06-28 12:43:50
 
 ### Added
 - 新增全屏查看功能，支持 Raw / Pretty / Hex 视图全屏展示
@@ -29,13 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 优化 LayoutBar 布局切换按钮状态管理
 - 优化面板 CSS 样式，提升整体视觉一致性
 
-## [2.0.1] - 2026-06-28
+## [2.0.1] - 2026-06-28 03:54:21
 
 ### Fixed
 - 修复标签页布局下请求/响应面板切换时搜索高亮未实时清除的问题
 - 修复标签页切换按钮使用原生 `<button>` 替代 PrimeVue `Button` 组件以提升样式可控性
 
-## [2.0.0] - 2026-06-28
+## [2.0.0] - 2026-06-28 03:37:45
 
 ### Added
 - 全新 Vue 3 + TypeScript 技术栈重构，替换原有纯原生 JS 实现
@@ -52,45 +58,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - 移除原有纯原生 HTML/CSS/JS 源码目录（已于 v2.2.0 正式删除，`vue_src/` 重命名为 `src/`）
 
-## [1.3.4] - 2025-06-28
+## [1.3.4] - 2026-06-28 01:23:04
 
 ### Fixed
 - UI/UX 全面修复与优化
 
-## [1.3.3] - 2025-06-27
+## [1.3.3] - 2026-06-28 00:30:47
 
 ### Fixed
 - 修复若干 UI 显示问题
 
-## [1.3.2] - 2025-06-27
+## [1.3.2] - 2026-06-28 00:11:36
 
 ### Fixed
 - 修复布局与样式问题
 
-## [1.3.1] - 2025-06-26
+## [1.3.1] - 2026-06-27 23:05:11
 
 ### Fixed
 - 修复 jQuery 迁移与 overlay 布局问题
 
-## [1.3.0] - 2025-06-26
+## [1.3.0] - 2026-06-27 21:37:48
 
 ### Added
 - 新增会话提取与管理功能
 - 支持自定义 Scheme 与 Field 配置
 
-## [1.2.0] - 2025-06-25
+## [1.2.0] - 2026-06-27 20:17:25
 
 ### Added
 - 新增搜索高亮与导航功能
 - 支持正则表达式与大小写敏感搜索
 
-## [1.1.0] - 2025-06-24
+## [1.1.0] - 2026-06-27 19:50:24
 
 ### Added
 - 新增布局切换功能（垂直/水平/标签页）
 - 支持多种报文展示模式
 
-## [1.0.0] - 2025-06-23
+## [1.0.0] - 2026-06-27 19:02:04
 
 ### Added
 - 初始版本发布
@@ -99,7 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 支持请求列表展示与筛选
 - 支持报文复制与下载
 
-## [0.1.0] - 2025-06-22
+## [0.1.0] - 2026-06-26 18:19:33
 
 ### Added
 - 项目原型与基础功能验证
