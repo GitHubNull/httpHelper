@@ -41,8 +41,7 @@ jobs:
       - name: Package extension as zip
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          cd dist
-          zip -r "../http-helper-v${VERSION}.zip" .
+          zip -r "http-helper-v${VERSION}.zip" manifest.json dist/
 
       - name: Extract changelog for release notes
         id: changelog
