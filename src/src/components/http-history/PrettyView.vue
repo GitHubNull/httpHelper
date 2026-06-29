@@ -25,7 +25,7 @@ const languageClass = computed(() => {
 
 function syncLineNumbers() {
     if (!lineNumbersEl.value || !preEl.value) return
-    const text = props.content || ''
+    const text = (props.content || '').replace(/\r\n/g, '\n').replace(/^\n+/, '')
     const lines = text.split('\n').length
     let html = ''
     for (let i = 1; i <= lines; i++) {
@@ -37,7 +37,9 @@ function syncLineNumbers() {
 
 function highlight() {
     if (!codeEl.value) return
-    const text = props.content || ''
+    const raw = props.content || ''
+    // 规范化换行符：\r\n → \n，并去除首行空白
+    const text = raw.replace(/\r\n/g, '\n').replace(/^\n+/, '')
     if (props.language && hljs.getLanguage(props.language)) {
         try {
             const result = hljs.highlight(text, { language: props.language })
@@ -87,6 +89,7 @@ onMounted(() => {
 }
 
 .code-block {
+    margin: 0;
     font-family: 'Consolas', 'Monaco', monospace;
     font-size: 11px;
     line-height: 1.4;

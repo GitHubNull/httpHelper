@@ -40,7 +40,8 @@ export function buildRawResponse(res: HarResponse, body: string): string {
     }
     result += '\r\n'
     if (body) {
-        result += body
+        // 剥离 body 前导 \r\n，防止头体分隔符后出现多余空行
+        result += body.replace(/^[\r\n]+/, '')
     }
     return result
 }
@@ -48,13 +49,13 @@ export function buildRawResponse(res: HarResponse, body: string): string {
 export function buildPrettyRequest(req: HarRequest): string {
     if (!req) return ''
     let result = ''
-    result += `${req.method} ${req.url} HTTP/1.1\r\n`
+    result += `${req.method} ${req.url} HTTP/1.1\n`
     if (req.headers && req.headers.length > 0) {
         for (const h of req.headers) {
-            result += `${h.name}: ${h.value}\r\n`
+            result += `${h.name}: ${h.value}\n`
         }
     }
-    result += '\r\n'
+    result += '\n'
     if (req.postData && req.postData.text) {
         const ct = detectContentType(req.headers)
         result += formatBody(req.postData.text, ct)
@@ -65,16 +66,18 @@ export function buildPrettyRequest(req: HarRequest): string {
 export function buildPrettyResponse(res: HarResponse, body: string): string {
     if (!res) return ''
     let result = ''
-    result += `HTTP/1.1 ${res.status} ${res.statusText}\r\n`
+    result += `HTTP/1.1 ${res.status} ${res.statusText}\n`
     if (res.headers && res.headers.length > 0) {
         for (const h of res.headers) {
-            result += `${h.name}: ${h.value}\r\n`
+            result += `${h.name}: ${h.value}\n`
         }
     }
-    result += '\r\n'
+    result += '\n'
     if (body) {
+        // 剥离 body 前导 \r\n，防止头体分隔符后出现多余空行
+        const cleanBody = body.replace(/^[\r\n]+/, '')
         const ct = detectContentType(res.headers)
-        result += formatBody(body, ct)
+        result += formatBody(cleanBody, ct)
     }
     return result
 }
