@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.3] - 2026-06-29
+
+### Fixed
+- 修复 PrettyView 行号同步和语法高亮中换行符 `\r\n` 未规范化导致的显示错位问题
+- 修复 `buildRawResponse` 中 body 前导 `\r\n` 导致头体分隔符后出现多余空行的问题
+- 修复 Pretty 视图报文格式化使用 `\r\n` 换行导致 HTML 渲染异常的问题，统一改用 `\n`
+- 修复 `panel.css` 缺失 `.m-0` 工具类定义的问题
+
+### Changed
+- `buildPrettyRequest` / `buildPrettyResponse` 换行符由 `\r\n` 改为 `\n`，适配 HTML 显示
+- PrettyView `.code-block` 添加 `margin: 0` 消除默认外边距
+
 ## [2.5.2] - 2026-06-29
 
 ### Fixed
