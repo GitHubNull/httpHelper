@@ -8,6 +8,7 @@ export interface FilterState {
     type: string
     color: string
     keyword: string
+    fetchXhr: boolean
     useRegex: boolean
     caseSensitive: boolean
     invert: boolean
@@ -22,6 +23,7 @@ export const useFilterStore = defineStore('filter', {
     state: () => ({
         filterState: {
             method: '', type: '', color: '', keyword: '',
+            fetchXhr: false,
             useRegex: false, caseSensitive: false, invert: false
         } as FilterState,
         sortState: { column: null, direction: 'asc' } as SortState,
@@ -48,7 +50,7 @@ export const useFilterStore = defineStore('filter', {
             const all = networkStore.requests
             const f = this.filterState
             let result = all.slice()
-            const hasFilter = f.method || f.type || f.color || f.keyword
+            const hasFilter = f.method || f.type || f.color || f.keyword || f.fetchXhr
             if (!hasFilter && !f.invert) return result
 
             if (f.method) {
@@ -72,6 +74,9 @@ export const useFilterStore = defineStore('filter', {
                     }
                     return f.caseSensitive ? text.includes(kw) : text.toLowerCase().includes(kw.toLowerCase())
                 })
+            }
+            if (f.fetchXhr) {
+                result = result.filter(r => r._resourceType === 'fetch' || r._resourceType === 'xhr')
             }
             if (f.invert) {
                 const filteredSet = new Set(result)
@@ -143,7 +148,7 @@ export const useFilterStore = defineStore('filter', {
             this.refreshDisplay()
         },
 
-        toggleFilter(key: 'useRegex' | 'caseSensitive' | 'invert') {
+        toggleFilter(key: 'fetchXhr' | 'useRegex' | 'caseSensitive' | 'invert') {
             this.filterState[key] = !this.filterState[key]
             this.refreshDisplay()
         },
@@ -151,6 +156,7 @@ export const useFilterStore = defineStore('filter', {
         clearFilters() {
             this.filterState = {
                 method: '', type: '', color: '', keyword: '',
+                fetchXhr: false,
                 useRegex: false, caseSensitive: false, invert: false
             }
             this.refreshDisplay()

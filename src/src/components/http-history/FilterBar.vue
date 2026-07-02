@@ -18,6 +18,14 @@
             size="small"
             v-tooltip.top="'高级过滤'"
         />
+        <Button
+            label="XHR"
+            @click="filterStore.toggleFilter('fetchXhr')"
+            :class="['opt-btn', { 'opt-active': filterStore.filterState.fetchXhr }]"
+            text
+            size="small"
+            v-tooltip.top="'仅显示 Fetch/XHR'"
+        />
         <div class="search-input-wrapper">
             <InputText
                 v-model="keyword"
@@ -136,6 +144,21 @@ function toggleAdvanced() {
 
 .search-input-icon:hover {
     color: var(--p-primary-color, #0d6efd);
+}
+
+.opt-btn {
+    min-width: 28px;
+    height: 22px;
+    padding: 0 2px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 1px solid transparent;
+}
+
+.opt-btn.opt-active {
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
 }
 
 .opt-active {
