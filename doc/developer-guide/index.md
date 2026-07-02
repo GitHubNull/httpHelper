@@ -63,19 +63,21 @@ httpHelper/
 │   ├── manifest.json           # 扩展清单（@crxjs 构建用）
 │   ├── panel.html              # 面板入口 HTML
 │   ├── devtools.html           # DevTools 入口 HTML
+│   ├── popup.html              # 工具栏弹出页 HTML（版本显示/调试开关）
 │   └── src/                    # Vue 3 源码目录
 │       ├── App.vue             # 根组件（Tab 布局、全屏覆盖层）
 │       ├── main.ts             # 应用入口（Pinia、PrimeVue、highlight.js 初始化）
 │       ├── devtools.ts         # DevTools 面板注册
+│       ├── popup.ts            # 弹出页入口（版本显示/调试开关）
 │       ├── components/         # Vue 组件目录
 │       │   ├── http-history/   # HTTP 历史功能组件（14 个）
 │       │   ├── session-config/ # 会话配置功能组件（7 个）
 │       │   ├── toolbar/        # 工具栏组件（1 个）
 │       │   └── common/         # 通用组件（4 个）
-│       ├── composables/        # 组合式 API（4 个）
+│       ├── composables/        # 组合式 API（5 个）
 │       ├── services/           # 业务服务（会话提取/存储）
 │       ├── stores/             # Pinia 状态管理（5 个 store）
-│       ├── utils/              # 工具函数（4 个模块）
+│       ├── utils/              # 工具函数（5 个模块，含调试日志）
 │       ├── types/              # TypeScript 类型定义
 │       └── styles/             # 全局样式
 ├── dist/                       # 构建输出目录
@@ -102,6 +104,8 @@ main.ts (应用入口)
   │   └── searchStore ──→ selectionStore (读取面板内容)
   ├── useNetworkListener (composable)
   │   └── 初始化网络监听 + 会话提取检查
+  ├── debug-logger (util)
+  │   └── 所有模块（store/service/composable）通过 createLogger 获取调试日志
   └── App.vue (根组件)
       ├── ToolbarBar.vue
       ├── HttpHistoryTab.vue
@@ -178,9 +182,9 @@ export const useXxxStore = defineStore('xxx', {
 | 目录名 | kebab-case | `http-history/` |
 | 组件名 | PascalCase | `RequestTable` |
 | Store | camelCase + `Store` 后缀 | `useNetworkStore` |
-| Composable | `use` 前缀 + PascalCase | `useSearchHighlight` |
+| Composable | `use` 前缀 + PascalCase | `useSearchHighlight`、`useLineCopy` |
 | 方法 | camelCase | `selectRequest()` |
-| 常量 | UPPER_SNAKE_CASE | `MAX_REQUESTS` |
+| 常量 | UPPER_SNAKE_CASE | `MAX_REQUESTS`、`LINE_HEIGHT` |
 | 类型/接口 | PascalCase | `HarEntry` |
 
 ### 编码规范
@@ -256,6 +260,14 @@ console.error('[sessionExtractor] Parse failed:', err)
 - [ ] 列头排序正常（三态：升序→降序→取消）
 - [ ] 面板拖拽调整大小正常
 - [ ] 录制暂停/恢复正常（脉冲动画指示）
+- [ ] 行复制正常（点击行号 + Ctrl+Shift+C 快捷键）
+- [ ] 软换行切换正常（长行自动换行）
+- [ ] NL 换行符可视化标记切换正常
+- [ ] XHR 快捷过滤按钮正常（仅显示 Fetch/XHR 类型）
+- [ ] 二进制响应体识别与下载正常（图片/音频/视频/字体等）
+- [ ] popup 弹出页正常显示（版本号、调试开关）
+- [ ] 调试日志开关正常（开启后控制台输出带前缀日志）
+- [ ] popup 页面显示正常（图标/名称/版本号/DevTools 指引）
 
 ---
 

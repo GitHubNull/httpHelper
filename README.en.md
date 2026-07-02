@@ -13,7 +13,13 @@ English | [中文](README.md)
 - **Smart Switching**: Auto-switch to the best view based on Content-Type
 - **Layout Switching**: Vertical, Horizontal, and Tab layouts
 - **Search & Highlight**: Full-text search with regex support, highlight and navigation
-- **Session Extraction**: Customizable schemes to auto-extract session info from requests
+- **XHR Quick Filter**: One-click filter to show only Fetch/XHR requests
+- **Session Extraction**: Customizable schemes to auto-extract session info (Full/Substring/Regex/Keyword/XPath/JSONPath, supports response headers/body)
+- **Line Copy**: Click line number or use Ctrl+Shift+C to copy the current line
+- **Soft Wrap & Line Break Markers**: Toggle long-line wrap and show/hide line break markers
+- **Binary Download**: Auto-detect binary responses with smart file naming (Content-Disposition > URL path > Content-Type > timestamp fallback)
+- **Toolbar Popup**: Click extension icon for version info and debug toggle panel
+- **Debug Logging**: Modular debug logging with visual toggle in popup panel
 - **One-click Copy**: Copy raw messages to clipboard
 - **One-click Download**: Download messages as `.txt` files
 - **Theme Adaptation**: Auto light/dark theme adaptation
@@ -51,20 +57,22 @@ httpHelper/
 ├── src/                        # Vite project root
 │   ├── manifest.json           # Extension manifest (@crxjs build)
 │   ├── panel.html              # Panel entry HTML
-│   ├── devtools.html            # DevTools entry HTML
+│   ├── devtools.html           # DevTools entry HTML
+│   ├── popup.html              # Toolbar popup HTML
 │   └── src/                    # Vue 3 source directory
 │       ├── App.vue             # Root component
 │       ├── main.ts             # App entry
 │       ├── devtools.ts         # DevTools panel registration
+│       ├── popup.ts            # Popup entry (version display / debug toggle)
 │       ├── components/         # Vue components
 │       │   ├── http-history/   # HTTP history components
 │       │   ├── session-config/ # Session config components
 │       │   ├── toolbar/        # Toolbar components
 │       │   └── common/         # Common components
-│       ├── composables/        # Composition API
+│       ├── composables/        # Composition API (5 modules)
 │       ├── services/           # Business services (session extraction/storage)
 │       ├── stores/             # Pinia state management
-│       ├── utils/              # Utility functions
+│       ├── utils/              # Utility functions (5 modules, incl. debug logging)
 │       ├── types/              # TypeScript type definitions
 │       └── styles/             # Global styles
 ├── dist/                       # Build output directory (load extension from here)
@@ -86,6 +94,7 @@ httpHelper/
 - UI components: PrimeVue 4.5 + PrimeIcons
 - Build tool: Vite 6 + @crxjs/vite-plugin
 - Syntax highlighting: highlight.js
+- Debug logging: debug-logger (modular logs, popup toggle control)
 
 ## Developer Guide
 

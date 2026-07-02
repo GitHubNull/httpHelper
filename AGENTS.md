@@ -22,10 +22,12 @@ httpHelper/
 │   ├── manifest.json           # 扩展清单（@crxjs 构建用）
 │   ├── panel.html              # 面板入口 HTML
 │   ├── devtools.html           # DevTools 入口 HTML
+│   ├── popup.html              # 工具栏弹出页 HTML（版本显示/调试开关）
 │   └── src/                    # Vue 3 源码目录
 │       ├── App.vue             # 根组件（Tab 布局、全屏覆盖层）
-│       ├── main.ts             # 应用入口（Pinia、PrimeVue、highlight.js 初始化）
+│       ├── main.ts             # 应用入口（Pinia、PrimeVue、highlight.js、调试模式初始化）
 │       ├── devtools.ts         # DevTools 面板注册
+│       ├── popup.ts            # 弹出页入口（版本显示/调试开关）
 │       ├── components/         # Vue 组件目录
 │       │   ├── http-history/   # HTTP 历史功能组件
 │       │   │   ├── HttpHistoryTab.vue      # HTTP 历史主容器
@@ -57,11 +59,12 @@ httpHelper/
 │       │       ├── PaneResizer.vue          # 面板大小调整器
 │       │       ├── ColorPicker.vue          # 颜色选择器
 │       │       └── ColumnConfig.vue         # 列配置下拉
-│       ├── composables/        # 组合式 API
+│       ├── composables/        # 组合式 API（5 个）
 │       │   ├── useNetworkListener.ts        # 网络监听初始化
 │       │   ├── useSearchHighlight.ts        # 搜索高亮逻辑
 │       │   ├── useResize.ts                 # 面板大小调整
-│       │   └── useFullscreenOverlay.ts      # 全屏覆盖层
+│       │   ├── useFullscreenOverlay.ts      # 全屏覆盖层
+│       │   └── useLineCopy.ts              # 行复制/换行符可视化
 │       ├── services/           # 业务服务
 │       │   ├── session-extractor.ts         # 会话信息提取
 │       │   └── session-storage.ts           # 会话方案和字段持久化
@@ -75,7 +78,8 @@ httpHelper/
 │       │   ├── content-formatter.ts  # 报文格式化（Raw/Pretty/Hex）
 │       │   ├── string-utils.ts       # 字符串处理（转义、JSON/XML 格式化、Hex 转换）
 │       │   ├── dom-utils.ts          # DOM 工具（防抖、行号、高亮覆盖层）
-│       │   └── clipboard-utils.ts    # 剪贴板与文件下载
+│       │   ├── clipboard-utils.ts    # 剪贴板与文件下载
+│       │   └── debug-logger.ts       # 调试日志系统（模块化日志/开关控制）
 │       ├── types/              # TypeScript 类型定义
 │       │   └── har.d.ts        # HAR 数据类型定义
 │       └── styles/             # 全局样式
@@ -110,9 +114,10 @@ httpHelper/
 ### main.ts 应用入口
 
 `main.ts` 负责应用初始化：
+- 初始化调试模式状态监听（`initDebugModeListener`，确保 panel 能响应 popup 中的调试开关）
 - 创建 Vue 应用实例
 - 安装 Pinia 状态管理
-- 配置 PrimeVue（Aura 主题，暗色模式自适应）
+- 配置 PrimeVue（Aura 主题，暗色模式自适应，禁用 Toast/Dialog 关闭按钮 autofocus）
 - 注册 Toast 服务和 Tooltip 指令
 - 注册 highlight.js 语言（http、json、xml）
 - 挂载到 `#app`
@@ -167,10 +172,14 @@ httpHelper/
 ### services/ 业务服务
 
 #### session-extractor.ts
-- `extractSession(request, scheme)`：按方案提取会话字段
+- `extractSession(request, scheme)`：按方案提取会话字段（不支持 response-body）
+- `extractSessionAsync(request, scheme)`：异步提取会话字段（支持 response-body）
 - `applySchemeToRequest(request, scheme)`：应用方案（检查激活状态和域名匹配）
-- `extractByMode(source, field)`：按模式提取（substring/regex/keyword/xpath/jsonpath）
+- `applySchemeToRequestAsync(request, scheme)`：异步应用方案（支持响应体提取）
+- `extractByMode(source, field)`：按模式提取（full/substring/regex/keyword/xpath/jsonpath）
 - `isSchemeApplicable(request, scheme)`：检查域名匹配（支持域名列表和正则）
+- `getFieldSource(request, location)`：获取字段数据源（支持 header/body/response-header/response-body）
+- `formatExtractResult(result, scheme)`：格式化提取结果（支持 key=value/json/custom 模板）
 
 #### session-storage.ts
 - `loadAllFields()` / `saveField()` / `updateField()` / `deleteField()`：字段 CRUD
@@ -200,6 +209,14 @@ httpHelper/
 #### useFullscreenOverlay.ts
 - 全屏覆盖层状态管理
 
+#### useLineCopy.ts
+- `getLineFromClick(e, containerEl, content)`：根据点击位置计算行索引和内容
+- `getCurrentLineFromTextarea(el)`：根据 textarea 光标位置获取当前行
+- `copyLineContent(text, lineIdx)`：复制行内容到剪贴板
+- `applyLineBreakMarkers(content, enabled)`：为每行追加换行符标记 `↵`
+- `handleLineCopyShortcut(e, copyFn)`：处理 Ctrl+Shift+C 快捷键
+- `renderContentWithLineBreaks(content, showBreaks)`：渲染带换行符标记的 HTML
+
 ### utils/ 工具函数
 
 #### content-formatter.ts
@@ -227,6 +244,14 @@ httpHelper/
 #### clipboard-utils.ts
 - `copyText(text)`：写入剪贴板，降级使用 `document.execCommand`
 - `downloadText(text, filename)`：通过 Blob 触发文件下载
+
+#### debug-logger.ts
+- `createLogger(moduleName)`：创建带模块标识的调试 logger（支持 log/warn/error/group/time）
+- `isDebugEnabled()`：同步获取调试模式状态
+- `isDebugEnabledAsync()`：等待初始化完成后获取调试模式状态
+- `setDebugEnabled(enabled)`：设置调试模式并持久化到 `chrome.storage.local`
+- `debugLog(...args)`：全局便捷调试日志（无模块标识）
+- `initDebugModeListener()`：初始化调试状态监听（在 `main.ts` 入口调用）
 
 ## 编码规范
 

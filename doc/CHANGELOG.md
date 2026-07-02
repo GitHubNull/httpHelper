@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 会话提取新增 `full` 模式，返回完整源文本而不做任何提取
 - 新增 `response-header` / `response-body` 位置支持，扩展字段提取范围
 - 新增 `extractSessionAsync` 异步提取方法，支持从响应体提取数据
+- 新增 `applySchemeToRequestAsync` 异步方案应用方法
+- 新增 `formatExtractResult` 输出格式化函数，支持 key=value / JSON / 自定义模板三种格式
+- `SessionScheme` 新增 `outputFormat` / `outputTemplate` 字段，支持输出格式配置
 - 新增 `FieldOptions` 接口，规范化字段提取选项定义
 
 ### Changed
@@ -23,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `clipboard-utils` 增强健壮性，修复潜在 DOM 泄漏问题
+
+## [2.7.1] - 2026-07-02
+
+### Changed
+- 文档全面同步更新（README、AGENTS、开发者指南、使用教程），补充 v2.7.0 新增特性的完整文档说明
+- CHANGELOG v2.7.0 条目补充：`applySchemeToRequestAsync`、`formatExtractResult`、`outputFormat`/`outputTemplate`
+
+### Fixed
+- 修复 `package.json` 和 `src/manifest.json` 缺少 JSON 尾随逗号的格式问题
 
 ## [2.6.1] - 2026-07-02
 

@@ -390,12 +390,20 @@ interface PaneSearchState {
 
 ```typescript
 interface FieldLocation {
-    type: string   // 'header' | 'body'
+    type: string   // 'header' | 'body' | 'response-header' | 'response-body'
     name: string   // header 名称或 body 标识
 }
 
 interface ExtractResult {
     [key: string]: string
+}
+
+interface FieldOptions {
+    startOffset?: number
+    endOffset?: number
+    caseSensitive?: boolean
+    groupIndex?: number
+    context?: number
 }
 ```
 
@@ -405,12 +413,23 @@ interface ExtractResult {
 
 按方案提取会话字段，返回 `{ fieldName: value, ... }`。无匹配时返回 `null`。
 
+> **注意**：同步方法不支持 `response-body` 类型字段，遇到时会输出警告日志并跳过。如需提取响应体，请使用 `extractSessionAsync`。
+
+##### `extractSessionAsync(request: HarEntry, scheme: SessionScheme): Promise<ExtractResult | null>`
+
+异步提取会话字段，支持 `response-body` 类型字段。
+
+- 若 `scheme.fields` 为空，自动调用 `getSchemeFields()` 从存储填充
+- 对 `response-body` 字段，通过 `request.getContent()` 异步获取响应体后提取
+- 响应体获取超时时间 5000ms
+
 ##### `extractByMode(source: string, field: SessionField): string | null`
 
 按字段配置的匹配模式提取内容。支持模式：
 
 | 模式 | 说明 | options |
 |------|------|---------|
+| `full` | 完整值返回（不提取） | 无需 pattern |
 | `substring` | 子字符串匹配 | `startOffset`, `endOffset` |
 | `regex` | 正则表达式（支持捕获组） | `caseSensitive`, `groupIndex` |
 | `keyword` | 关键词匹配（提取上下文） | `context`（默认 50 字符） |
@@ -421,12 +440,27 @@ interface ExtractResult {
 
 从请求中获取指定位置的数据源字符串。
 
-- `location.type === 'header'`：返回指定 Header 的值
-- `location.type === 'body'`：返回请求体文本
+- `'header'`：返回请求中指定 Header 的值
+- `'body'`：返回请求体文本
+- `'response-header'`：返回响应中指定 Header 的值
+- `'response-body'`：不包括（`null`），需通过 `extractSessionAsync` 异步处理
 
 ##### `applySchemeToRequest(request: HarEntry, scheme: SessionScheme): ExtractResult | null`
 
 应用方案到请求（检查激活状态和域名匹配），返回提取结果或 `null`。
+
+> **已废弃**：请使用 `applySchemeToRequestAsync` 以支持响应体提取。
+
+##### `applySchemeToRequestAsync(request: HarEntry, scheme: SessionScheme): Promise<ExtractResult | null>`
+
+异步应用方案到请求，支持 `response-body` 字段提取。
+
+##### `formatExtractResult(result: ExtractResult, scheme: SessionScheme): string`
+
+按方案的输出格式配置格式化提取结果：
+- `'key=value'`（默认）：`key=value\nkey=value...`
+- `'json'`：JSON 格式化输出
+- `'custom'`：使用 `scheme.outputTemplate` 模板（`{{fieldName}}` 占位符替换）
 
 ##### `isSchemeApplicable(request: HarEntry, scheme: SessionScheme): boolean`
 
@@ -577,6 +611,46 @@ function useResize(options: {
 
 ---
 
+### useLineCopy.ts
+
+行复制功能和换行符可视化。
+
+#### 导出常量
+
+```typescript
+const LINE_HEIGHT = 11 * 1.4  // 行高 ≈ 15.4px
+```
+
+#### 导出函数
+
+```typescript
+// 根据鼠标点击位置和内容文本计算所在行索引及内容
+function getLineFromClick(
+    e: MouseEvent,
+    containerEl: HTMLElement,
+    content: string
+): { index: number; text: string } | null
+
+// 根据 textarea 光标位置获取当前行
+function getCurrentLineFromTextarea(
+    el: HTMLTextAreaElement
+): { index: number; text: string } | null
+
+// 复制指定行到剪贴板（异步返回成功状态），自动去除行尾 ↵ 标记
+async function copyLineContent(text: string, lineIdx: number): Promise<{ ok: boolean; lineIdx: number }>
+
+// 为报文内容添加换行符可视化标记（在每行末尾追加 ↵）
+function applyLineBreakMarkers(content: string, enabled: boolean): string
+
+// 处理 Ctrl+Shift+C 快捷键复制当前行，返回 true 表示已处理
+function handleLineCopyShortcut(e: KeyboardEvent, copyFn: () => void): boolean
+
+// 将纯文本内容渲染为带换行符标记的 HTML
+function renderContentWithLineBreaks(content: string, showBreaks: boolean): string
+```
+
+---
+
 ### useSearchHighlight.ts
 
 ```typescript
@@ -720,6 +794,56 @@ function getResourceCategory(request: HarEntry | null): string
 
 ---
 
+### debug-logger.ts
+
+调试日志工具模块，支持模块化日志与 popup 面板开关控制。
+
+#### 导出接口
+
+```typescript
+interface DebugLogger {
+    log(...args: unknown[]): void       // 普通日志（调试模式关闭时静默）
+    warn(...args: unknown[]): void      // 警告日志（调试模式关闭时静默）
+    error(...args: unknown[]): void     // 错误日志（始终输出）
+    group(label: string): void          // 分组开始
+    groupEnd(): void                    // 分组结束
+    time(label: string): void           // 计时开始
+    timeEnd(label: string): void        // 计时结束
+    readonly moduleName: string         // 模块名
+}
+```
+
+#### 导出函数
+
+```typescript
+// 创建带模块标识的调试 logger
+// 使用: const logger = createLogger('extract'); logger.log('提取开始...')
+function createLogger(moduleName: string): DebugLogger
+
+// 同步获取调试模式状态（可能不准确，推荐异步方法）
+function isDebugEnabled(): boolean
+
+// 等待初始化完成后获取调试模式状态
+async function isDebugEnabledAsync(): Promise<boolean>
+
+// 设置调试模式并持久化到 chrome.storage.local
+async function setDebugEnabled(enabled: boolean): Promise<void>
+
+// 全局便捷调试日志（无模块标识）
+function debugLog(...args: unknown[]): void
+
+// 初始化调试状态监听（在应用入口 main.ts 调用，确保 panel 能响应 popup 中的状态变更）
+function initDebugModeListener(): void
+```
+
+#### 日志格式
+
+```
+[http helper][模块名][HH:MM:SS.sss] 消息内容
+```
+
+---
+
 ## 类型定义 (har.d.ts)
 
 ```typescript
@@ -757,7 +881,7 @@ interface HarEntry {
     response: HarResponse
     startedDateTime: string
     time: number
-    getContent: (callback: (body: string) => void) => void
+    getContent: (callback: (body: string, encoding: string) => void) => void
     _uid?: number
     _reqStartTime?: string | null
     _resEndTime?: string | null
@@ -791,6 +915,8 @@ interface SessionScheme {
     fieldIds: string[]
     isActive: boolean
     fields?: SessionField[]
+    outputFormat?: 'key=value' | 'json' | 'custom'
+    outputTemplate?: string
     createdAt?: number
     updatedAt?: number
 }
@@ -806,18 +932,35 @@ interface RequestMeta {
 ## 应用入口 (main.ts)
 
 ```typescript
+// 初始化调试模式状态监听（确保 panel 能响应 popup 中的调试模式切换）
+initDebugModeListener()
+
+// 注册 highlight.js 语言（http、json、xml）
+hljs.registerLanguage('http', http)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('xml', xml)
+
 // 创建 Vue 应用
 const app = createApp(App)
 
 // 安装 Pinia 状态管理
 app.use(createPinia())
 
-// 配置 PrimeVue（Aura 主题，暗色模式自适应）
+// 配置 PrimeVue（Aura 主题，暗色模式自适应，禁用 Toast/Dialog 关闭按钮 autofocus）
 app.use(PrimeVue, {
     theme: {
         preset: Aura,
         options: {
             darkModeSelector: '@media (prefers-color-scheme: dark)'
+        }
+    },
+    pt: {
+        toast: {
+            closeButton: { autofocus: false }
+        },
+        dialog: {
+            pcCloseButton: { root: { autofocus: false } },
+            pcMaximizeButton: { root: { autofocus: false } }
         }
     }
 })
@@ -825,11 +968,6 @@ app.use(PrimeVue, {
 // 注册 Toast 服务和 Tooltip 指令
 app.use(ToastService)
 app.directive('tooltip', Tooltip)
-
-// 注册 highlight.js 语言（http、json、xml）
-hljs.registerLanguage('http', http)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('xml', xml)
 
 // 挂载
 app.mount('#app')

@@ -20,6 +20,7 @@ http helper 的设计目标是提供一个轻量、高效、可扩展的 Chrome 
 - **构建工具**：Vite 6 + @crxjs/vite-plugin
 - **类型系统**：TypeScript 5.7（strict 模式）
 - **代码高亮**：highlight.js 11.x
+- **调试日志**：debug-logger（模块化日志，popup 开关控制）
 
 ## 数据流
 
@@ -79,6 +80,16 @@ filter   ← network    (refreshDisplay 调用 getRequestMeta 用于颜色过滤
 ```
 
 ## 组件架构
+
+### 扩展入口页面
+
+项目包含三个独立的扩展页面，分别由 `manifest.json` 中的 `devtools_page` 和 `action.default_popup` 配置：
+
+| 页面 | 入口文件 | 说明 |
+|------|---------|------|
+| DevTools 面板 | `devtools.html` + `devtools.ts` | DevTools 面板注册入口 |
+| 主面板 | `panel.html` + `main.ts` + `App.vue` | Vue 应用主面板 |
+| 工具栏弹出页 | `popup.html` + `popup.ts` | 扩展图标弹出页，显示版本信息与调试模式开关 |
 
 ### 主要组件层次
 
@@ -172,8 +183,9 @@ App.vue
 
 ### 新增提取模式
 
-1. 在 `src/src/services/session-extractor.ts` 的 `extractByMode()` switch 中新增 case
+1. 在 `src/src/services/session-extractor.ts` 的 `extractByMode()` switch 中新增 case（已有: full/substring/regex/keyword/xpath/jsonpath）
 2. 在 `FieldEditorDialog.vue` 的 Mode 下拉框中新增选项
+3. 如需支持异步数据源（如响应体），参考 `extractSessionAsync` 的实现模式
 
 ### 新增布局模式
 
@@ -192,3 +204,4 @@ App.vue
 - 全屏模式使用 Vue Teleport + FullscreenOverlay 组件，支持 ESC 栈式退出
 - 面板拖拽通过 `useResize` composable 实时计算比例，使用 CSS flex 布局
 - 会话数据迁移（`migrateIfNeeded`）仅在首次加载时执行一次
+- 调试日志通过内存缓存（`_debugEnabled`）避免每次调用异步查询，popup 开关变更通过 `chrome.storage.onChanged` 实时同步

@@ -55,6 +55,7 @@ PR 将由维护者审查，可能要求：
 | 新增/修改 composable | `module-api.md` + `AGENTS.md` |
 | 新增/修改 service | `module-api.md` + `AGENTS.md` |
 | 新增/修改 utils 函数 | `module-api.md` + `AGENTS.md` |
+| 新增调试相关功能 | `module-api.md` + `AGENTS.md` + `usage-guide.md`（debug-logger） |
 | 新增/修改组件 | `architecture.md` 组件树 + `AGENTS.md` |
 | 新增/修改类型定义 | `module-api.md` 类型定义章节 |
 | 功能变更（用户可见） | `usage-guide.md` |

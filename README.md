@@ -13,7 +13,13 @@
 - **智能切换**：根据 Content-Type 自动切换到最合适的视图（JSON/XML 自动格式化）
 - **布局切换**：支持垂直布局、水平布局、标签页布局三种模式
 - **搜索高亮**：支持全文搜索，支持正则表达式，匹配结果高亮并支持导航
-- **会话提取**：可自定义 Scheme，自动从请求中提取会话信息（支持 Substring/Regex/Keyword/XPath/JSONPath）
+- **XHR 快捷过滤**：一键过滤仅显示 Fetch/XHR 类型请求
+- **会话提取**：可自定义 Scheme，自动从请求中提取会话信息（支持 Full/Substring/Regex/Keyword/XPath/JSONPath，支持响应头/响应体）
+- **行复制**：点击行号或使用 Ctrl+Shift+C 快捷键复制当前行
+- **软换行与换行符可视化**：支持切换长行自动换行，支持显示/隐藏行尾换行符标记
+- **二进制下载**：自动识别二进制响应并支持下载，智能命名（按 Content-Disposition > URL 路径 > Content-Type > 时间戳回退）
+- **工具栏弹出页**：点击扩展图标显示版本信息与调试开关面板
+- **调试日志系统**：支持模块化调试日志，通过 popup 面板可视化开关控制
 - **一键复制**：一键复制报文到剪贴板
 - **一键下载**：一键下载报文为 `.txt` 文件
 - **主题适配**：自动适配系统亮/暗主题
@@ -51,20 +57,22 @@ httpHelper/
 ├── src/                        # Vite 项目根目录
 │   ├── manifest.json           # 扩展清单（@crxjs 构建用）
 │   ├── panel.html              # 面板入口 HTML
-│   ├── devtools.html            # DevTools 入口 HTML
+│   ├── devtools.html           # DevTools 入口 HTML
+│   ├── popup.html              # 工具栏弹出页 HTML
 │   └── src/                    # Vue 3 源码目录
 │       ├── App.vue             # 根组件
 │       ├── main.ts             # 应用入口
 │       ├── devtools.ts         # DevTools 面板注册
+│       ├── popup.ts            # 弹出页入口（版本显示/调试开关）
 │       ├── components/         # Vue 组件
 │       │   ├── http-history/   # HTTP 历史组件
 │       │   ├── session-config/ # 会话配置组件
 │       │   ├── toolbar/        # 工具栏组件
 │       │   └── common/         # 通用组件
-│       ├── composables/        # 组合式 API
+│       ├── composables/        # 组合式 API（5 个）
 │       ├── services/           # 业务服务（会话提取/存储）
 │       ├── stores/             # Pinia 状态管理
-│       ├── utils/              # 工具函数
+│       ├── utils/              # 工具函数（5 个，含调试日志）
 │       ├── types/              # TypeScript 类型定义
 │       └── styles/             # 全局样式
 ├── dist/                       # 构建输出目录（加载扩展时选择此目录）
@@ -86,6 +94,7 @@ httpHelper/
 - UI 组件库: PrimeVue 4.5 + PrimeIcons
 - 构建工具: Vite 6 + @crxjs/vite-plugin
 - 代码高亮: highlight.js
+- 调试日志: debug-logger（模块化日志，popup 面板开关控制）
 
 ## 开发指南
 
