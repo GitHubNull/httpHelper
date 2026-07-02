@@ -65,10 +65,10 @@ const filterStore = useFilterStore()
 
 const { isFullscreen: isFs0, overlayRef: overlay0, target: target0 } = useFullscreenOverlay()
 
-onMounted(() => {
+onMounted(async () => {
+    await sessionStore.loadAll()
     init()
     filterStore.refreshDisplay()
-    sessionStore.loadAll()
 })
 </script>
 

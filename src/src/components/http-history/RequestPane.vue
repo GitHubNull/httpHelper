@@ -243,9 +243,9 @@ function downloadContent() {
     downloadText(text, name)
 }
 
-function copySession() {
+async function copySession() {
     if (!selectionStore.currentRequest) return
-    const result = sessionStore.checkSessionExtraction(selectionStore.currentRequest)
+    const result = await sessionStore.checkSessionExtraction(selectionStore.currentRequest)
     if (result && result.keys.length > 0) {
         const text = JSON.stringify(result.data, null, 2)
         copyText(text).then(ok => {

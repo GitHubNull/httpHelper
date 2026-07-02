@@ -255,16 +255,19 @@ Content-Length: 256\r\n
 3. 填写字段信息：
    - **Field Name**：字段名称（如 `token`、`userId`）
    - **Location**：数据来源位置
-     - `Header`：从请求头中提取
-     - `Body`：从请求体中提取
-   - **Location Name**：当 Location 为 Header 时，填写 Header 名称（如 `Authorization`）；为 Body 时留空
+     - `请求 Header`：从请求头中提取（默认使用完整值模式，只需指定 Header 名称）
+     - `请求 Body`：从请求体中提取
+     - `响应 Header`：从响应头中提取（默认使用完整值模式）
+     - `响应 Body`：从响应体中提取
+   - **Location Name**：当 Location 为 Header 类型时，填写 Header 名称（如 `Authorization`、`Set-Cookie`）；为 Body 类型时留空
    - **Mode**：提取模式
-     - `Substring`：子字符串匹配
-     - `Regex`：正则表达式匹配（支持捕获组）
-     - `Keyword`：关键词匹配（提取上下文）
+     - `完整值 (full)`：直接返回源数据全部内容，无需匹配规则（Header 类型的默认模式）
+     - `子串匹配 (substring)`：子字符串匹配（支持起始/结束偏移量）
+     - `正则匹配 (regex)`：正则表达式匹配（支持捕获组和大小写）
+     - `关键词 (keyword)`：关键词匹配（提取上下文）
      - `XPath`：XPath 表达式（用于 XML/HTML）
      - `JSONPath`：JSONPath 表达式（用于 JSON）
-   - **Pattern / Expression**：匹配模式或表达式
+   - **Pattern / Expression**：匹配模式或表达式（完整值模式无需填写）
 4. 点击保存
 
 ### 创建 Scheme
@@ -298,11 +301,12 @@ userId: 456
 
 | 模式 | 用途 | Pattern 示例 | 说明 |
 |------|------|-------------|------|
-| Substring | 提取固定位置内容 | `Bearer ` | 从匹配位置提取到末尾 |
-| Regex | 灵活提取 | `Bearer ([^\s]+)` | 提取第一个捕获组 |
-| Keyword | 提取上下文 | `session_id` | 提取关键词前后 50 字符 |
+| 完整值 (full) | 直接获取源数据 | 无需填写 | 返回 Header 值或 Body 全文，Header 类型的默认模式 |
+| 子串匹配 (substring) | 提取固定位置内容 | `Bearer ` | 从匹配位置提取到末尾，支持偏移量 |
+| 正则匹配 (regex) | 灵活提取 | `Bearer ([^\s]+)` | 提取第一个捕获组，支持大小写开关 |
+| 关键词 (keyword) | 提取上下文 | `session_id` | 提取关键词前后 50 字符 |
 | XPath | XML 提取 | `//user/id` | 从 XML 中提取节点值 |
-| JSONPath | JSON 提取 | `$.data.token` | 从 JSON 中提取字段值 |
+| JSONPath | JSON 提取 | `$.data.token` | 从 JSON 中提取字段值，支持通配符和递归 |
 
 ### 编辑和删除
 

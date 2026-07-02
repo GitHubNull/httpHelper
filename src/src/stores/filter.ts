@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { useNetworkStore } from './network'
 import { getResourceCategory } from '@/utils/string-utils'
 import type { HarEntry } from '@/types/har'
+import { createLogger } from '@/utils/debug-logger'
+
+const logger = createLogger('filter')
 
 export interface FilterState {
     method: string
@@ -35,9 +38,13 @@ export const useFilterStore = defineStore('filter', {
     actions: {
         refreshDisplay() {
             const networkStore = useNetworkStore()
+            const totalBefore = networkStore.requests.length
             let result = this.getFilteredRequests(networkStore)
+            const afterFilter = result.length
             result = this.getSortedRequests(result, networkStore)
             this.displayedRequests = result
+
+            logger.log('刷新显示列表, 总数:', totalBefore, '过滤后:', afterFilter, '排序字段:', this.sortState.column || 'none', this.sortState.direction)
 
             if (this.selectedUid !== null) {
                 this.selectedIndex = result.findIndex(r => r._uid === this.selectedUid)
@@ -146,14 +153,17 @@ export const useFilterStore = defineStore('filter', {
         setFilter(key: keyof FilterState, value: any) {
             (this.filterState as any)[key] = value
             this.refreshDisplay()
+            logger.log('过滤条件变更:', key, '=', value)
         },
 
         toggleFilter(key: 'fetchXhr' | 'useRegex' | 'caseSensitive' | 'invert') {
+            logger.log('过滤开关切换:', key, '→', !this.filterState[key])
             this.filterState[key] = !this.filterState[key]
             this.refreshDisplay()
         },
 
         clearFilters() {
+            logger.log('清除所有过滤条件')
             this.filterState = {
                 method: '', type: '', color: '', keyword: '',
                 fetchXhr: false,
@@ -163,17 +173,21 @@ export const useFilterStore = defineStore('filter', {
         },
 
         toggleSort(column: string) {
+            let newDir = 'asc'
             if (this.sortState.column === column) {
                 if (this.sortState.direction === 'asc') {
-                    this.sortState.direction = 'desc'
+                    newDir = 'desc'
                 } else {
+                    logger.log('排序切换:', column, '→ 取消排序')
                     this.sortState.column = null
                     this.sortState.direction = 'asc'
+                    this.refreshDisplay()
+                    return
                 }
-            } else {
-                this.sortState.column = column
-                this.sortState.direction = 'asc'
             }
+            logger.log('排序切换:', column, newDir)
+            this.sortState.column = column
+            this.sortState.direction = newDir as 'asc' | 'desc'
             this.refreshDisplay()
         },
 

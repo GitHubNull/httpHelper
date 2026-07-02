@@ -131,7 +131,7 @@ async function onToggleEnabled(field: SessionField, enabled: boolean) {
 }
 
 function getUsedByNames(field: SessionField): string {
-    const schemes = sessionStore.schemes.filter(s => s.fieldIds && s.fieldIds.includes(field.id))
+    const schemes = sessionStore.schemes.filter(s => Array.isArray(s.fieldIds) && s.fieldIds.includes(field.id))
     return schemes.length > 0 ? schemes.map(s => s.name).join(', ') : '-'
 }
 

@@ -6,6 +6,9 @@ import {
     detectContentType, isBodyBinary
 } from '@/utils/content-formatter'
 import { useFilterStore } from './filter'
+import { createLogger } from '@/utils/debug-logger'
+
+const logger = createLogger('selection')
 
 export type LayoutType = 'vertical' | 'horizontal' | 'tabs'
 export type TabType = 'raw' | 'pretty' | 'hex'
@@ -57,6 +60,7 @@ export const useSelectionStore = defineStore('selection', {
             this.currentRequest = request
 
             if (request) {
+                logger.log('选中请求:', request.request?.method, request.request?.url, 'uid:', request._uid)
                 filterStore.setSelectedUid(request._uid || null)
 
                 this.requestContent = {
@@ -71,8 +75,11 @@ export const useSelectionStore = defineStore('selection', {
                 this.currentResponseEncoding = ''
                 this.isLoadingBody = true
 
+                const startTime = performance.now()
                 request.getContent((body: string, encoding: string) => {
+                    const elapsed = (performance.now() - startTime).toFixed(1)
                     const bodyText = body || ''
+                    logger.log('响应体获取完成, 耗时:', elapsed + 'ms', '编码:', encoding || 'none', '大小:', bodyText.length, '字节')
                     this.currentResponseBody = bodyText
                     this.currentResponseEncoding = encoding || ''
                     this.responseContent = {
@@ -89,13 +96,18 @@ export const useSelectionStore = defineStore('selection', {
                     else if (resType === 'binary') this.activeTab.response = 'hex'
                     else this.activeTab.response = 'raw'
 
+                    logger.log('响应内容类型:', resType, '自动切换到标签:', this.activeTab.response)
+
                     const reqBodyText = request.request.postData?.text || ''
                     const reqType = reqBodyText ? detectContentType(request.request.headers) : 'text'
                     if (reqType === 'json' || reqType === 'xml') this.activeTab.request = 'pretty'
                     else if (reqType === 'binary') this.activeTab.request = 'hex'
                     else this.activeTab.request = 'raw'
+
+                    logger.log('请求内容类型:', reqType, '自动切换到标签:', this.activeTab.request)
                 })
             } else {
+                logger.log('取消选中请求')
                 filterStore.setSelectedUid(null)
                 this.currentResponseBody = ''
                 this.currentResponseEncoding = ''
@@ -118,6 +130,7 @@ export const useSelectionStore = defineStore('selection', {
         },
 
         setLayout(layout: LayoutType) {
+            logger.log('布局切换:', layout)
             this.currentLayout = layout
         },
 

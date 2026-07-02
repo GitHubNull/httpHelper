@@ -54,6 +54,72 @@
             color: #9ca3af;
             margin: 0 4px;
         }
+        .debug-section {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .debug-section .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .debug-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .debug-label {
+            font-size: 13px;
+            color: #1f2937;
+        }
+        .debug-hint {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #d1d5db;
+            transition: background-color 0.2s;
+            border-radius: 22px;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: transform 0.2s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #3b82f6;
+        }
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(18px);
+        }
         @media (prefers-color-scheme: dark) {
             body {
                 background: #1f2937;
@@ -76,6 +142,18 @@
             .arrow {
                 color: #6b7280;
             }
+            .debug-section {
+                border-top-color: #374151;
+            }
+            .debug-section .section-title {
+                color: #9ca3af;
+            }
+            .debug-label {
+                color: #f3f4f6;
+            }
+            .toggle-slider {
+                background-color: #4b5563;
+            }
         }
     </style>
 </head>
@@ -91,6 +169,17 @@
         <p>
             按 <span class="shortcut">F12</span> 打开 DevTools<span class="arrow">→</span>找到 <strong>Http Helper</strong> 面板查看 HTTP 报文
         </p>
+        <div class="debug-section">
+            <div class="section-title">调试模式</div>
+            <div class="debug-row">
+                <span class="debug-label">启用详细日志</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="debugToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="debug-hint">开启后在 DevTools 控制台输出详细调试信息</div>
+        </div>
     </div>
     <script type="module" src="./src/popup.ts"></script>
 </body>

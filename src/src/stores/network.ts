@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import type { HarEntry, RequestMeta } from '@/types/har'
+import { createLogger } from '@/utils/debug-logger'
 
+const logger = createLogger('network')
 const MAX_REQUESTS = 500
 
 export const useNetworkStore = defineStore('network', {
@@ -15,8 +17,12 @@ export const useNetworkStore = defineStore('network', {
     actions: {
         initNetworkListener(callback?: (request: HarEntry) => void) {
             this.onNewRequestCallback = callback || null
+            logger.log('初始化网络监听器, 录制状态:', this.isRecording)
             chrome.devtools.network.onRequestFinished.addListener((request: any) => {
-                if (!this.isRecording) return
+                if (!this.isRecording) {
+                    logger.log('录制已暂停，跳过请求:', request.request?.method, request.request?.url)
+                    return
+                }
 
                 request._uid = ++this.uidCounter
                 this.requestMeta.set(request._uid, { color: null, note: '' })
@@ -34,9 +40,11 @@ export const useNetworkStore = defineStore('network', {
                     const dropped = this.requests.pop()
                     if (dropped && dropped._uid) {
                         this.requestMeta.delete(dropped._uid)
+                        logger.warn('请求列表溢出，已丢弃最旧记录, uid:', dropped._uid, '当前数量:', this.requests.length)
                     }
                 }
 
+                logger.log('请求捕获:', request.request?.method, request.request?.url, 'status:', request.response?.status, 'uid:', request._uid, '总数:', this.requests.length)
                 this.onNewRequestCallback?.(request)
             })
         },
@@ -54,6 +62,8 @@ export const useNetworkStore = defineStore('network', {
         },
 
         clearRequests() {
+            const count = this.requests.length
+            logger.log('清空请求列表, 数量:', count)
             this.requests = []
             this.requestMeta.clear()
             this.uidCounter = 0
@@ -64,6 +74,7 @@ export const useNetworkStore = defineStore('network', {
         },
 
         setRecording(enabled: boolean) {
+            logger.log('录制状态切换:', enabled ? '开启' : '暂停')
             this.isRecording = enabled
         },
 
@@ -74,12 +85,18 @@ export const useNetworkStore = defineStore('network', {
 
         setRequestColor(uid: number, color: string | null) {
             const meta = this.requestMeta.get(uid)
-            if (meta) meta.color = color
+            if (meta) {
+                meta.color = color
+                logger.log('设置请求颜色, uid:', uid, 'color:', color)
+            }
         },
 
         setRequestNote(uid: number, note: string) {
             const meta = this.requestMeta.get(uid)
-            if (meta) meta.note = note
+            if (meta) {
+                meta.note = note
+                logger.log('设置请求备注, uid:', uid, 'note长度:', note.length)
+            }
         }
     }
 })

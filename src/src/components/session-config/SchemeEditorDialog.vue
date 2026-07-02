@@ -49,6 +49,25 @@
                     v-model="form.fieldIds"
                 />
             </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="field-label flex-shrink-0">输出格式</label>
+                <Select
+                    v-model="form.outputFormat"
+                    :options="outputFormatOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    class="flex-grow-1"
+                />
+            </div>
+            <div v-if="form.outputFormat === 'custom'" class="d-flex flex-column gap-1">
+                <label class="field-label">输出模板</label>
+                <Textarea
+                    v-model="form.outputTemplate"
+                    rows="3"
+                    class="w-100"
+                    placeholder="使用 {{字段名}} 引用字段值，如: token={{Token}}"
+                />
+            </div>
         </div>
         <template #footer>
             <Button
@@ -72,6 +91,7 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
+import Select from 'primevue/select'
 import DualListSelector from './DualListSelector.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToast } from 'primevue/usetoast'
@@ -88,8 +108,16 @@ const form = ref({
     domains: '',
     domainRegex: '',
     description: '',
-    fieldIds: [] as string[]
+    fieldIds: [] as string[],
+    outputFormat: 'key=value' as 'key=value' | 'json' | 'custom',
+    outputTemplate: ''
 })
+
+const outputFormatOptions = [
+    { label: 'Key=Value (每行一对)', value: 'key=value' },
+    { label: 'JSON 格式', value: 'json' },
+    { label: '自定义模板', value: 'custom' }
+]
 
 const isEditing = computed(() => editingId.value !== null)
 
@@ -103,7 +131,9 @@ watch(() => sessionStore.editingSchemeId, (id) => {
                 domains: (scheme.targetDomains || []).join(', '),
                 domainRegex: scheme.domainRegex || '',
                 description: scheme.description || '',
-                fieldIds: scheme.fieldIds || []
+                fieldIds: Array.isArray(scheme.fieldIds) ? [...scheme.fieldIds] : [],
+                outputFormat: scheme.outputFormat || 'key=value',
+                outputTemplate: scheme.outputTemplate || ''
             }
         }
         visible.value = true
@@ -137,7 +167,9 @@ function openNew() {
         domains: '',
         domainRegex: '',
         description: '',
-        fieldIds: []
+        fieldIds: [],
+        outputFormat: 'key=value',
+        outputTemplate: ''
     }
     visible.value = true
 }
@@ -163,8 +195,10 @@ async function save() {
         targetDomains: domains,
         domainRegex: form.value.domainRegex.trim(),
         description: form.value.description.trim(),
-        fieldIds: form.value.fieldIds,
-        isActive: false
+        fieldIds: Array.isArray(form.value.fieldIds) ? [...form.value.fieldIds] : [],
+        isActive: false,
+        outputFormat: form.value.outputFormat,
+        outputTemplate: form.value.outputTemplate.trim() || undefined
     }
 
     let result

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-07-02
+
+### Added
+- 新增统一调试日志系统（`debug-logger.ts`），支持模块化日志开关与分级输出
+- popup 页面新增调试开关面板，支持可视化控制日志模块启用状态
+- 会话提取新增 `full` 模式，返回完整源文本而不做任何提取
+- 新增 `response-header` / `response-body` 位置支持，扩展字段提取范围
+- 新增 `extractSessionAsync` 异步提取方法，支持从响应体提取数据
+- 新增 `FieldOptions` 接口，规范化字段提取选项定义
+
+### Changed
+- `FieldEditorDialog` 重构优化字段编辑交互体验
+- session store 增加调试日志追踪与 activeScheme 字段自动刷新
+- `DualListSelector` 交互逻辑优化
+- `extractByMode` 增强空值防御检查
+
+### Fixed
+- `clipboard-utils` 增强健壮性，修复潜在 DOM 泄漏问题
+
 ## [2.6.1] - 2026-07-02
 
 ### Added

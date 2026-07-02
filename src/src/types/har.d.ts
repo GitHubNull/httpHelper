@@ -66,6 +66,8 @@ export interface SessionScheme {
     fieldIds: string[]
     isActive: boolean
     fields?: SessionField[]
+    outputFormat?: 'key=value' | 'json' | 'custom'
+    outputTemplate?: string
     createdAt?: number
     updatedAt?: number
 }

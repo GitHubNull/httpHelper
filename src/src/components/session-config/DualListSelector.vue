@@ -58,7 +58,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Listbox from 'primevue/listbox'
 import Button from 'primevue/button'
 import type { SessionField } from '@/types/har'
@@ -69,28 +69,39 @@ const props = defineProps<{
 
 const modelValue = defineModel<string[]>({ default: () => [] })
 
+// Defensive: ensure modelValue stays as array even if Vue/PrimeVue corrupts it
+watch(modelValue, (val) => {
+    if (Array.isArray(val)) return  // 正常情况快速返回
+    console.warn('[DualListSelector] modelValue corrupted, resetting to []', val)
+    modelValue.value = []
+}, { immediate: true })
+
 const availableSelected = ref<string[]>([])
 const selectedSelected = ref<string[]>([])
 
-const availableOptions = computed(() =>
-    props.fields
-        .filter(f => !modelValue.value.includes(f.id))
+const availableOptions = computed(() => {
+    const selected = Array.isArray(modelValue.value) ? modelValue.value : []
+    return props.fields
+        .filter(f => !selected.includes(f.id))
         .map(f => ({ id: f.id, label: `${f.name} (${f.mode})` }))
-)
+})
 
-const selectedOptions = computed(() =>
-    props.fields
-        .filter(f => modelValue.value.includes(f.id))
+const selectedOptions = computed(() => {
+    const selected = Array.isArray(modelValue.value) ? modelValue.value : []
+    return props.fields
+        .filter(f => selected.includes(f.id))
         .map(f => ({ id: f.id, label: `${f.name} (${f.mode})` }))
-)
+})
 
 function moveRight() {
-    modelValue.value = [...modelValue.value, ...availableSelected.value]
+    const current = Array.isArray(modelValue.value) ? modelValue.value : []
+    modelValue.value = [...current, ...availableSelected.value]
     availableSelected.value = []
 }
 
 function moveLeft() {
-    modelValue.value = modelValue.value.filter(id => !selectedSelected.value.includes(id))
+    const current = Array.isArray(modelValue.value) ? modelValue.value : []
+    modelValue.value = current.filter(id => !selectedSelected.value.includes(id))
     selectedSelected.value = []
 }
 
