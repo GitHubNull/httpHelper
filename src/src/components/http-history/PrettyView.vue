@@ -1,104 +1,141 @@
 <template>
-    <div class="pretty-view h-100 d-flex overflow-hidden">
-        <div class="line-numbers" ref="lineNumbersEl"></div>
-        <pre class="code-block flex-grow-1 overflow-auto m-0" ref="preEl" @scroll="syncLineNumbers"><code ref="codeEl" :class="languageClass"></code></pre>
+    <div class="pretty-view h-100 overflow-auto" ref="scrollContainer" @keydown="onKeydown" tabindex="0">
+        <div class="code-table">
+            <div
+                v-for="(line, i) in renderedLines"
+                :key="i"
+                class="code-row"
+            >
+                <div
+                    class="line-num-cell"
+                    @mouseenter="hoverLineIndex = i"
+                    @mouseleave="hoverLineIndex = -1"
+                    @click="onLineNumClick(i)"
+                >
+                    <div class="line-hover-overlay" v-if="hoverLineIndex === i"></div>
+                    <span class="line-copy-icon" v-if="hoverLineIndex === i">
+                        <i class="pi pi-copy"></i>
+                    </span>
+                    {{ i + 1 }}
+                </div>
+                <div
+                    class="line-content-cell"
+                    :class="{ 'line-nowrap': !softWrap }"
+                    :data-original="line"
+                    data-is-html="true"
+                    v-html="line"
+                ></div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, nextTick, computed } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import hljs from 'highlight.js/lib/core'
+import {
+    copyLineContent,
+    handleLineCopyShortcut,
+} from '@/composables/useLineCopy'
+import { useToast } from 'primevue/usetoast'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     content: string
     language?: string
-}>()
-
-const codeEl = ref<HTMLElement | null>(null)
-const lineNumbersEl = ref<HTMLElement | null>(null)
-const preEl = ref<HTMLPreElement | null>(null)
-
-const languageClass = computed(() => {
-    if (!props.language) return ''
-    return `language-${props.language}`
+    softWrap?: boolean
+    showLineBreaks?: boolean
+}>(), {
+    softWrap: true,
+    showLineBreaks: false
 })
 
-function syncLineNumbers() {
-    if (!lineNumbersEl.value || !preEl.value) return
-    const text = (props.content || '').replace(/\r\n/g, '\n').replace(/^\n+/, '')
-    const lines = text.split('\n').length
-    let html = ''
-    for (let i = 1; i <= lines; i++) {
-        html += i + '\n'
-    }
-    lineNumbersEl.value.textContent = html
-    lineNumbersEl.value.scrollTop = preEl.value.scrollTop
+const scrollContainer = ref<HTMLElement | null>(null)
+const hoverLineIndex = ref(-1)
+const toast = useToast()
+
+// 规范化文本
+function getNormalizedText(): string {
+    return (props.content || '').replace(/\r\n/g, '\n').replace(/^\n+/, '')
 }
 
-function highlight() {
-    if (!codeEl.value) return
+// 逐行 HTML（含高亮和换行符标记）
+const renderedLines = computed<string[]>(() => {
     const raw = props.content || ''
-    // 规范化换行符：\r\n → \n，并去除首行空白
     const text = raw.replace(/\r\n/g, '\n').replace(/^\n+/, '')
+
     if (props.language && hljs.getLanguage(props.language)) {
         try {
             const result = hljs.highlight(text, { language: props.language })
-            codeEl.value.innerHTML = result.value
-            nextTick(syncLineNumbers)
-            return
+            let html = result.value
+            if (props.showLineBreaks) {
+                html = html.split('\n').map(line =>
+                    line + '<span class="line-break-marker">↵</span>'
+                ).join('\n')
+            }
+            return html.split('\n')
         } catch {
             // fall through
         }
     }
-    codeEl.value.textContent = text
-    nextTick(syncLineNumbers)
+
+    if (props.showLineBreaks) {
+        return text.split('\n').map(line =>
+            escapeHtml(line) + '<span class="line-break-marker">↵</span>'
+        )
+    }
+    return text.split('\n').map(line => escapeHtml(line))
+})
+
+// 获取纯文本行（用于复制）
+function getLineText(index: number): string {
+    const normalized = getNormalizedText()
+    const lines = normalized.split('\n')
+    if (index < 0 || index >= lines.length) return ''
+    return lines[index]
 }
 
-watch(() => props.content, () => {
-    nextTick(highlight)
-})
+function onLineNumClick(index: number) {
+    const text = getLineText(index)
+    copyLineContent(text, index).then(r => {
+        toast.add({
+            severity: r.ok ? 'success' : 'error',
+            summary: r.ok ? `第 ${r.lineIdx + 1} 行已复制` : '复制失败',
+            life: 2000
+        })
+    })
+}
 
-watch(() => props.language, () => {
-    nextTick(highlight)
-})
+function onKeydown(e: KeyboardEvent) {
+    handleLineCopyShortcut(e, () => {
+        const idx = hoverLineIndex.value
+        if (idx < 0) return
+        const text = getLineText(idx)
+        copyLineContent(text, idx).then(r => {
+            toast.add({
+                severity: r.ok ? 'success' : 'error',
+                summary: r.ok ? `第 ${r.lineIdx + 1} 行已复制` : '复制失败',
+                life: 2000
+            })
+        })
+    })
+}
+
+function escapeHtml(str: string): string {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+}
 
 onMounted(() => {
-    highlight()
+    // initial render happens via computed
 })
 </script>
 
 <style scoped>
 .pretty-view {
     position: relative;
-}
-
-.line-numbers {
-    flex-shrink: 0;
-    width: 40px;
-    overflow: hidden;
-    text-align: right;
-    padding: 2px 4px 2px 2px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
-    line-height: 1.4;
-    color: var(--hh-text-muted, #6c757d);
-    background: var(--hh-bg-secondary, #f8f9fa);
-    border-right: 1px solid var(--hh-border, #dee2e6);
-    white-space: pre;
-    user-select: none;
-}
-
-.code-block {
-    margin: 0;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-all;
-    padding: 2px 4px;
-}
-
-.code-block code {
-    font-family: inherit;
+    min-height: 0;
 }
 </style>

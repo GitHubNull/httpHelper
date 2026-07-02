@@ -46,7 +46,9 @@ export const useSelectionStore = defineStore('selection', {
         requestContent: { raw: '', pretty: '', hex: '' } as PaneContent,
         responseContent: { raw: '', pretty: '', hex: '' } as PaneContent,
         editingNoteUid: null as number | null,
-        noteText: ''
+        noteText: '',
+        softWrapEnabled: { request: true, response: true } as { request: boolean; response: boolean },
+        showLineBreaks: { request: false, response: false } as { request: boolean; response: boolean }
     }),
 
     actions: {
@@ -133,6 +135,14 @@ export const useSelectionStore = defineStore('selection', {
             if (tab === 'pretty') return content.pretty
             if (tab === 'hex') return content.hex
             return ''
+        },
+
+        toggleSoftWrap(pane: 'request' | 'response') {
+            this.softWrapEnabled[pane] = !this.softWrapEnabled[pane]
+        },
+
+        toggleLineBreaks(pane: 'request' | 'response') {
+            this.showLineBreaks[pane] = !this.showLineBreaks[pane]
         },
 
         setNoteEditing(uid: number | null, text: string = '') {

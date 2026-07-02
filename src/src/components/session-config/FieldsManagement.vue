@@ -50,7 +50,7 @@
                         {{ data.location ? data.location.type : '' }}
                     </template>
                 </Column>
-                <Column field="location.name" header="位置名称" :style="{ width: '100px' }">
+                <Column field="location.name" header="键名" :style="{ width: '100px' }">
                     <template #body="{ data }">
                         {{ data.location ? (data.location.name || '-') : '' }}
                     </template>

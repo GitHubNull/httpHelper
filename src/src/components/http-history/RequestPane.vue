@@ -49,6 +49,23 @@
                             aria-controls="req-copy-menu"
                         />
                         <Menu ref="copyMenu" :model="copyMenuItems" popup />
+                        <div class="header-separator"></div>
+                        <Button
+                            :icon="selectionStore.softWrapEnabled.request ? 'pi pi-arrows-h' : 'pi pi-arrow-right'"
+                            @click="selectionStore.toggleSoftWrap('request')"
+                            text
+                            size="small"
+                            :class="['toggle-btn', { 'wrap-toggle-active': selectionStore.softWrapEnabled.request }]"
+                            v-tooltip.top="selectionStore.softWrapEnabled.request ? '软换行：开' : '软换行：关'"
+                        />
+                        <Button
+                            :class="['toggle-btn', { 'wrap-toggle-active': selectionStore.showLineBreaks.request }]"
+                            @click="selectionStore.toggleLineBreaks('request')"
+                            text
+                            size="small"
+                            label="NL"
+                            v-tooltip.top="selectionStore.showLineBreaks.request ? '换行符：显示' : '换行符：隐藏'"
+                        />
                         <Button
                             :icon="isFullscreen ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
                             @click="toggle"
@@ -62,15 +79,20 @@
                     <RawView
                         v-if="selectionStore.activeTab.request === 'raw'"
                         :content="selectionStore.requestContent.raw"
+                        :softWrap="selectionStore.softWrapEnabled.request"
+                        :showLineBreaks="selectionStore.showLineBreaks.request"
                     />
                     <PrettyView
                         v-else-if="selectionStore.activeTab.request === 'pretty'"
                         :content="selectionStore.requestContent.pretty"
                         :language="prettyLanguage"
+                        :softWrap="selectionStore.softWrapEnabled.request"
+                        :showLineBreaks="selectionStore.showLineBreaks.request"
                     />
                     <HexView
                         v-else-if="selectionStore.activeTab.request === 'hex'"
                         :content="selectionStore.requestContent.hex"
+                        :showLineBreaks="selectionStore.showLineBreaks.request"
                     />
                 </div>
                 <SearchBar pane="req" />
@@ -271,6 +293,20 @@ function copySession() {
     border: 1px solid var(--hh-primary, #0d6efd);
     color: var(--hh-primary, #0d6efd) !important;
     background: rgba(13, 110, 253, 0.1);
+}
+
+.header-separator {
+    width: 1px;
+    height: 16px;
+    background: var(--hh-border, #dee2e6);
+    margin: 0 2px;
+    align-self: center;
+}
+
+.toggle-btn {
+    min-width: 24px;
+    height: 20px;
+    padding: 0 2px;
 }
 
 .pane-content {

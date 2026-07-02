@@ -115,26 +115,90 @@ html, body {
 /* Width */
 .w-100 { width: 100% !important; }
 
-/* === Textarea Wrapper & Overlay === */
-.textarea-wrapper {
-    position: relative;
-    flex: 1;
-    overflow: hidden;
-    display: flex;
+/* === Code Table Layout (行号+内容同行) === */
+.code-table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.highlight-overlay {
+.code-row {
+    display: table-row;
+}
+
+.line-num-cell {
+    display: table-cell;
+    width: 40px;
+    min-width: 40px;
+    text-align: right;
+    padding: 0 4px 0 2px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--hh-text-muted);
+    background: var(--hh-bg-secondary);
+    border-right: 1px solid var(--hh-border);
+    white-space: pre;
+    user-select: none;
+    vertical-align: top;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hex 偏移量行号更宽 */
+.line-num-cell.hex-ln {
+    width: 46px;
+    min-width: 46px;
+}
+
+.line-content-cell {
+    display: table-cell;
+    padding: 0 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-all;
+    vertical-align: top;
+}
+
+.line-nowrap {
+    white-space: pre !important;
+}
+
+/* 行号悬停高亮层（每行独立） */
+.line-num-cell .line-hover-overlay {
     position: absolute;
     inset: 0;
+    background: var(--hh-bg-tertiary);
     pointer-events: none;
-    overflow: hidden;
-    white-space: pre;
-    font: 11px/1.4 'Consolas', 'Monaco', 'Courier New', monospace;
-    padding: 2px 4px;
-    z-index: 2;
-    color: transparent;
+    z-index: 1;
 }
 
+/* 行号复制按钮 */
+.line-num-cell .line-copy-icon {
+    position: absolute;
+    right: 2px;
+    top: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    font-size: 10px;
+    color: var(--hh-primary);
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 3;
+    line-height: 15.4px;
+}
+
+.line-num-cell:hover .line-copy-icon {
+    opacity: 0.7;
+}
+
+.line-num-cell .line-copy-icon:hover {
+    opacity: 1 !important;
+}
+
+/* === Search Highlight === */
 mark.search-highlight {
     background: #ffeb3b;
     color: #000;
@@ -361,4 +425,26 @@ mark.search-highlight-current {
 .hh-fs-leave-to {
     opacity: 0;
     transform: scale(0.98);
+}
+
+/* === 换行符标记 === */
+.line-break-marker {
+    color: var(--hh-text-muted);
+    opacity: 0.5;
+    font-size: 10px;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* === 软换行开关按钮激活态 === */
+.wrap-toggle-active {
+    border-color: var(--hh-primary) !important;
+    color: var(--hh-primary) !important;
+    background: rgba(13, 110, 253, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+    .wrap-toggle-active {
+        background: rgba(59, 130, 246, 0.15);
+    }
 }

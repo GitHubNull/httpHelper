@@ -1,94 +1,98 @@
 <template>
-    <div class="raw-view h-100 d-flex overflow-hidden">
-        <div class="line-numbers" ref="lineNumbersEl"></div>
-        <div class="textarea-wrapper position-relative flex-grow-1 overflow-hidden">
-            <textarea
-                ref="textareaEl"
-                class="code-view"
-                :value="content"
-                readonly
-                spellcheck="false"
-                @scroll="onScroll"
-            ></textarea>
-            <div class="highlight-overlay" ref="overlayEl"></div>
+    <div class="raw-view h-100 overflow-auto" ref="scrollContainer" @keydown="onKeydown" tabindex="0">
+        <div class="code-table">
+            <div
+                v-for="(line, i) in renderedLines"
+                :key="i"
+                class="code-row"
+            >
+                <div
+                    class="line-num-cell"
+                    @mouseenter="hoverLineIndex = i"
+                    @mouseleave="hoverLineIndex = -1"
+                    @click="onLineNumClick(i)"
+                >
+                    <div class="line-hover-overlay" v-if="hoverLineIndex === i"></div>
+                    <span class="line-copy-icon" v-if="hoverLineIndex === i">
+                        <i class="pi pi-copy"></i>
+                    </span>
+                    {{ i + 1 }}
+                </div>
+                <div
+                    class="line-content-cell"
+                    :class="{ 'line-nowrap': !softWrap }"
+                    :data-original="line"
+                    v-text="line"
+                ></div>
+            </div>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, nextTick } from 'vue'
-import { updateLineNumbers } from '@/utils/dom-utils'
+import { ref, computed } from 'vue'
+import {
+    copyLineContent,
+    handleLineCopyShortcut,
+} from '@/composables/useLineCopy'
+import { useToast } from 'primevue/usetoast'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     content: string
-}>()
-
-const textareaEl = ref<HTMLTextAreaElement | null>(null)
-const lineNumbersEl = ref<HTMLElement | null>(null)
-const overlayEl = ref<HTMLDivElement | null>(null)
-
-function onScroll() {
-    if (textareaEl.value && lineNumbersEl.value) {
-        updateLineNumbers(textareaEl.value, lineNumbersEl.value, props.content)
-    }
-    if (overlayEl.value && textareaEl.value) {
-        overlayEl.value.scrollTop = textareaEl.value.scrollTop
-        overlayEl.value.scrollLeft = textareaEl.value.scrollLeft
-    }
-}
-
-function syncLineNumbers() {
-    if (textareaEl.value && lineNumbersEl.value) {
-        updateLineNumbers(textareaEl.value, lineNumbersEl.value, props.content)
-    }
-}
-
-watch(() => props.content, () => {
-    nextTick(() => {
-        syncLineNumbers()
-    })
-}, { immediate: true })
-
-onMounted(() => {
-    syncLineNumbers()
+    softWrap?: boolean
+    showLineBreaks?: boolean
+}>(), {
+    softWrap: true,
+    showLineBreaks: false
 })
 
-defineExpose({ textareaEl, overlayEl })
+const scrollContainer = ref<HTMLElement | null>(null)
+const hoverLineIndex = ref(-1)
+const toast = useToast()
+
+const renderedLines = computed<string[]>(() => {
+    if (!props.content) return ['']
+    const lines = props.content.split('\n')
+    if (props.showLineBreaks) {
+        return lines.map(line => line + '\u21B5')
+    }
+    return lines
+})
+
+function onLineNumClick(index: number) {
+    const text = renderedLines.value[index] || ''
+    const cleanText = text.replace(/\u21B5$/g, '')
+    copyLineContent(cleanText, index).then(r => {
+        toast.add({
+            severity: r.ok ? 'success' : 'error',
+            summary: r.ok ? `第 ${r.lineIdx + 1} 行已复制` : '复制失败',
+            life: 2000
+        })
+    })
+}
+
+function onKeydown(e: KeyboardEvent) {
+    handleLineCopyShortcut(e, () => {
+        const idx = hoverLineIndex.value
+        if (idx < 0) return
+        const text = renderedLines.value[idx] || ''
+        const cleanText = text.replace(/\u21B5$/g, '')
+        copyLineContent(cleanText, idx).then(r => {
+            toast.add({
+                severity: r.ok ? 'success' : 'error',
+                summary: r.ok ? `第 ${r.lineIdx + 1} 行已复制` : '复制失败',
+                life: 2000
+            })
+        })
+    })
+}
+
+defineExpose({ scrollContainer })
 </script>
 
 <style scoped>
 .raw-view {
     position: relative;
-}
-
-.line-numbers {
-    flex-shrink: 0;
-    width: 40px;
-    overflow: hidden;
-    text-align: right;
-    padding: 2px 4px 2px 2px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
-    line-height: 1.4;
-    color: var(--hh-text-muted, #6c757d);
-    background: var(--hh-bg-secondary, #f8f9fa);
-    border-right: 1px solid var(--hh-border, #dee2e6);
-    white-space: pre;
-    user-select: none;
-}
-
-.code-view {
-    flex: 1;
-    border: none;
-    outline: none;
-    resize: none;
-    padding: 2px 4px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
-    line-height: 1.4;
-    white-space: pre;
-    overflow: auto;
-    background: transparent;
-    color: inherit;
+    min-height: 0;
 }
 </style>

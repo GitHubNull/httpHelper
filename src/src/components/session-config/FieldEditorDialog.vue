@@ -27,12 +27,12 @@
                     class="flex-grow-1"
                 />
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <label class="field-label flex-shrink-0">位置名称</label>
+            <div v-if="form.locationType === 'header'" class="d-flex align-items-center gap-2">
+                <label class="field-label flex-shrink-0">键名</label>
                 <InputText
                     v-model="form.locationName"
                     class="flex-grow-1"
-                    :placeholder="form.locationType === 'header' ? 'Header名称' : 'Body'"
+                    placeholder="Header键名"
                 />
             </div>
             <div class="d-flex align-items-center gap-2">
