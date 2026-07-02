@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - 过滤栏新增 XHR 快捷按钮，支持仅显示 Fetch/XHR 类型请求
+- 新增行复制功能：点击行号复制当前行内容，支持 Ctrl+Shift+C 快捷键
+- 新增软换行切换开关，支持 Raw/Pretty 视图长行自动换行
+- 新增换行符可视化标记（NL 按钮），支持显示/隐藏行尾 `↵` 符号
+- 新增 `useLineCopy` 组合式 API，封装行定位、复制和快捷键处理逻辑
+
+### Changed
+- RawView/PrettyView/HexView 重构为代码表格布局，统一行号区域交互体验
+- 行号区域支持悬停高亮并显示复制图标
 
 ## [2.5.3] - 2026-06-29
 
