@@ -23,6 +23,19 @@ export const COLOR_NAMES: Record<string, string> = {
     blue: '蓝色', purple: '紫色', pink: '粉色', gray: '灰色'
 }
 
+export const METHOD_COLOR_MAP: Record<string, string> = {
+    GET: '#198754',
+    POST: '#0d6efd',
+    PUT: '#fd7e14',
+    PATCH: '#ffc107',
+    DELETE: '#dc3545',
+    HEAD: '#6c757d',
+    OPTIONS: '#6f42c1',
+    CONNECT: '#6c757d',
+    TRACE: '#6c757d',
+    __default__: '#6c757d'
+}
+
 export interface PaneContent {
     raw: string
     pretty: string

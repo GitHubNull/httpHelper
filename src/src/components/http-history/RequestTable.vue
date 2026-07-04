@@ -81,7 +81,10 @@
                         ></span>
                     </template>
                     <template v-else-if="col.field === 'method'">
-                        {{ data.request.method }}
+                        <span
+                            class="method-badge"
+                            :style="{ background: getMethodColor(data.request.method) }"
+                        >{{ data.request.method }}</span>
                     </template>
                     <template v-else-if="col.field === 'host'">
                         {{ getHost(data) }}
@@ -131,7 +134,7 @@ import Checkbox from 'primevue/checkbox'
 import ColorPicker from '../common/ColorPicker.vue'
 import { useFilterStore } from '@/stores/filter'
 import { useNetworkStore } from '@/stores/network'
-import { useSelectionStore, COLOR_MAP } from '@/stores/selection'
+import { useSelectionStore, COLOR_MAP, METHOD_COLOR_MAP } from '@/stores/selection'
 import { getResourceCategory, formatTimestamp, truncateUrl } from '@/utils/string-utils'
 import ContextMenu from 'primevue/contextmenu'
 import { useToast } from 'primevue/usetoast'
@@ -178,6 +181,10 @@ function onRowClick(event: any) {
 function getColorHex(data: HarEntry): string {
     const color = networkStore.getRequestMeta(data._uid).color
     return color ? (COLOR_MAP[color] || 'transparent') : 'transparent'
+}
+
+function getMethodColor(method: string): string {
+    return METHOD_COLOR_MAP[method?.toUpperCase()] || METHOD_COLOR_MAP.__default__
 }
 
 function getHost(data: HarEntry): string {
@@ -354,6 +361,17 @@ function copyHeaders() {
     border-radius: 50%;
     border: 1px solid rgba(0, 0, 0, 0.2);
     cursor: pointer;
+}
+
+.method-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: nowrap;
 }
 
 .note-cell {
